@@ -1,4 +1,6 @@
 import { prisma } from './db';
+import type { Prisma } from '@prisma/client';
+import { broadcastInventory } from './realtime';
 
 export interface AvailabilityParams {
     checkIn: Date;
@@ -56,31 +58,38 @@ export async function checkRoomAvailability(
     if (overlappingBookings.length > 0) return false;
 
     // Check for overlapping room blocks (inventory closures)
-    const overlappingBlocks = await prisma.roomBlock.findMany({
-        where: {
-            roomId,
-            OR: [
-                {
-                    AND: [
-                        { startDate: { lte: checkIn } },
-                        { endDate: { gt: checkIn } },
-                    ],
-                },
-                {
-                    AND: [
-                        { startDate: { lt: checkOut } },
-                        { endDate: { gte: checkOut } },
-                    ],
-                },
-                {
-                    AND: [
-                        { startDate: { gte: checkIn } },
-                        { endDate: { lte: checkOut } },
-                    ],
-                },
-            ],
-        },
-    });
+    let overlappingBlocks = [] as Array<unknown>;
+    try {
+        overlappingBlocks = await prisma.roomBlock.findMany({
+            where: {
+                roomId,
+                OR: [
+                    {
+                        AND: [
+                            { startDate: { lte: checkIn } },
+                            { endDate: { gt: checkIn } },
+                        ],
+                    },
+                    {
+                        AND: [
+                            { startDate: { lt: checkOut } },
+                            { endDate: { gte: checkOut } },
+                        ],
+                    },
+                    {
+                        AND: [
+                            { startDate: { gte: checkIn } },
+                            { endDate: { lte: checkOut } },
+                        ],
+                    },
+                ],
+            },
+        });
+    } catch (err) {
+        // If the RoomBlock table isn't migrated yet, avoid hard-failing availability
+        console.warn('RoomBlock query failed; treating as no blocks. Error:', err);
+        overlappingBlocks = [];
+    }
 
     return overlappingBlocks.length === 0;
 }
@@ -144,8 +153,12 @@ export async function getAvailableRooms(checkIn: Date, checkOut: Date) {
             type: room.type,
             capacity: room.capacity,
             description: room.description,
-            amenities: JSON.parse(room.amenities as string) as string[],
-            images: JSON.parse(room.images as string) as string[],
+            amenities: typeof (room.amenities as any) === 'string'
+                ? (JSON.parse(room.amenities as unknown as string) as string[])
+                : ((room.amenities as unknown as string[]) ?? []),
+            images: typeof (room.images as any) === 'string'
+                ? (JSON.parse(room.images as unknown as string) as string[])
+                : ((room.images as unknown as string[]) ?? []),
             baseRate: room.rates[0]?.baseRate.toNumber() || 0,
             status: room.status,
         }));
@@ -192,49 +205,86 @@ export async function createBooking(data: {
     totalAmount: number;
     addons?: Array<{ addonType: string; name: string; quantity: number; price: number }>;
 }) {
-    // Check availability one more time before creating
-    const isAvailable = await checkRoomAvailability(
-        data.roomId,
-        data.checkIn,
-        data.checkOut
-    );
+    // Use an interactive transaction + advisory lock per room to prevent race conditions
+    return await prisma.$transaction(async (tx) => {
+        // Acquire advisory lock for this room within the transaction
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${data.roomId}))`;
 
-    if (!isAvailable) {
-        throw new Error('Room is no longer available for the selected dates');
-    }
+        // Re-check overlapping bookings within the transaction
+        const overlappingBookings = await tx.booking.findMany({
+            where: {
+                roomId: data.roomId,
+                status: { in: ['CONFIRMED', 'CHECKED_IN', 'PENDING'] },
+                OR: [
+                    { AND: [{ checkIn: { gte: data.checkIn } }, { checkIn: { lt: data.checkOut } }] },
+                    { AND: [{ checkOut: { gt: data.checkIn } }, { checkOut: { lte: data.checkOut } }] },
+                    { AND: [{ checkIn: { lte: data.checkIn } }, { checkOut: { gte: data.checkOut } }] },
+                ],
+            },
+        });
 
-    // Generate unique booking reference
-    const bookingReference = `OMK-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        if (overlappingBookings.length > 0) {
+            throw new Error('Room is no longer available for the selected dates');
+        }
 
-    // Create booking with addons in a transaction
-    const booking = await prisma.booking.create({
-        data: {
-            bookingReference,
-            guestId: data.guestId,
-            roomId: data.roomId,
-            checkIn: data.checkIn,
-            checkOut: data.checkOut,
-            numberOfGuests: data.numberOfGuests,
-            totalAmount: data.totalAmount,
-            taxAmount: data.totalAmount * 0.12, // 12% GST
-            status: 'PENDING',
-            addons: data.addons
-                ? {
-                    create: data.addons.map((addon) => ({
-                        addonType: addon.addonType,
-                        name: addon.name,
-                        quantity: addon.quantity,
-                        price: addon.price,
-                    })),
-                }
-                : undefined,
-        },
-        include: {
-            room: true,
-            guest: true,
-            addons: true,
-        },
+        // Check for overlapping blocks (best-effort in case table is missing)
+        try {
+            const overlappingBlocks = await tx.roomBlock.findMany({
+                where: {
+                    roomId: data.roomId,
+                    OR: [
+                        { AND: [{ startDate: { lte: data.checkIn } }, { endDate: { gt: data.checkIn } }] },
+                        { AND: [{ startDate: { lt: data.checkOut } }, { endDate: { gte: data.checkOut } }] },
+                        { AND: [{ startDate: { gte: data.checkIn } }, { endDate: { lte: data.checkOut } }] },
+                    ],
+                },
+            });
+            if (overlappingBlocks.length > 0) {
+                throw new Error('Room is blocked for these dates');
+            }
+        } catch {
+            // ignore when table not available
+        }
+
+        // Generate unique booking reference
+        const now = new Date();
+        const bookingReference = `OMK-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+        const booking = await tx.booking.create({
+            data: {
+                bookingReference,
+                guestId: data.guestId,
+                roomId: data.roomId,
+                checkIn: data.checkIn,
+                checkOut: data.checkOut,
+                numberOfGuests: data.numberOfGuests,
+                totalAmount: data.totalAmount,
+                taxAmount: data.totalAmount * 0.12,
+                status: 'PENDING',
+                addons: data.addons
+                    ? {
+                        create: data.addons.map((addon) => ({
+                            addonType: addon.addonType,
+                            name: addon.name,
+                            quantity: addon.quantity,
+                            price: addon.price,
+                        })),
+                    }
+                    : undefined,
+            },
+            include: { room: true, guest: true, addons: true },
+        });
+
+        // Broadcast inventory update (best-effort)
+        await broadcastInventory({
+            type: 'booking:created',
+            payload: {
+                roomId: data.roomId,
+                checkIn: data.checkIn.toISOString(),
+                checkOut: data.checkOut.toISOString(),
+            },
+        });
+
+        return booking;
     });
-
-    return booking;
 }

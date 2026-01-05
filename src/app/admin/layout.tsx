@@ -41,12 +41,12 @@ export default function AdminLayout({
     };
 
     return (
-        <div className="min-h-screen bg-neutral-50">
+        <div className="admin-root min-h-screen bg-neutral-50">
             {/* Sidebar */}
             <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-neutral-200 z-40">
                 {/* Logo */}
                 <div className="p-6 border-b border-neutral-200">
-                    <h1 className="text-2xl font-display font-bold text-neutral-900">
+                    <h1 className="text-2xl font-bold text-neutral-900">
                         Omkar Hotel
                     </h1>
                     <p className="text-sm text-neutral-600 mt-1">Admin Dashboard</p>

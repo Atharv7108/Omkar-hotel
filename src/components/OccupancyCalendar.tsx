@@ -129,6 +129,39 @@ export default function OccupancyCalendar() {
         })();
     }, [year, month]);
 
+    // Realtime: refresh stats when inventory updates (booking or blocks)
+    useEffect(() => {
+        let pusher: any;
+        let channel: any;
+        (async () => {
+            try {
+                const { default: Pusher } = await import('pusher-js');
+                const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
+                const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string | undefined;
+                if (!key || !cluster) return;
+                pusher = new Pusher(key as string, { cluster });
+                channel = pusher.subscribe('inventory');
+                const refresh = async () => {
+                    const m = `${year}-${String(month + 1).padStart(2, '0')}`;
+                    const occ = await fetch(`/api/admin/occupancy?month=${m}`);
+                    if (occ.ok) {
+                        const data = await occ.json();
+                        setStats(data.days);
+                    }
+                };
+                channel.bind('update', refresh);
+            } catch {
+                // ignore when pusher not configured
+            }
+        })();
+        return () => {
+            try {
+                if (channel) channel.unbind_all();
+                if (pusher) pusher.unsubscribe('inventory');
+            } catch {}
+        };
+    }, [year, month]);
+
     const submitBlock = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.roomId || !form.start || !form.end) return;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { broadcastInventory } from '@/lib/realtime';
 
 // GET /api/admin/room-blocks?start=YYYY-MM-DD&end=YYYY-MM-DD
 export async function GET(request: NextRequest) {
@@ -68,6 +69,11 @@ export async function POST(request: NextRequest) {
 
     const block = await (prisma as any).roomBlock.create({
       data: { roomId, startDate: start, endDate: end, reason },
+    });
+    // Broadcast inventory block creation
+    await broadcastInventory({
+      type: 'inventory:block:created',
+      payload: { roomId, startDate: start.toISOString(), endDate: end.toISOString() }
     });
 
     return NextResponse.json({ block }, { status: 201 });

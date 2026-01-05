@@ -215,7 +215,6 @@ export default function HomePage() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-neutral-400">
-                <li><a href="/rooms" className="hover:text-white transition-colors">Rooms</a></li>
                 <li><a href="/amenities" className="hover:text-white transition-colors">Amenities</a></li>
                 <li><a href="/contact" className="hover:text-white transition-colors">Contact Us</a></li>
               </ul>

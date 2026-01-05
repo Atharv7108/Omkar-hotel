@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { RoomCard } from '@/components/RoomCard';
 import { BookingSummary } from '@/components/BookingSummary';
@@ -33,12 +33,17 @@ export default function BookPage() {
             setError(null);
 
             try {
-                const response = await fetch(
-                    `/api/rooms/available?checkIn=${range.checkIn.toISOString()}&checkOut=${range.checkOut.toISOString()}`
-                );
+                const url = `/api/rooms/available?checkIn=${encodeURIComponent(range.checkIn.toISOString())}&checkOut=${encodeURIComponent(range.checkOut.toISOString())}`;
+                const response = await fetch(url);
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch available rooms');
+                    // Try to extract server-provided error message
+                    try {
+                        const errJson = await response.json();
+                        throw new Error(errJson?.error || 'Failed to fetch available rooms');
+                    } catch (_) {
+                        throw new Error('Failed to fetch available rooms');
+                    }
                 }
 
                 const data = await response.json();
@@ -54,6 +59,46 @@ export default function BookPage() {
             setSelectedRoom(null);
         }
     };
+
+    // Realtime: subscribe to inventory updates and refetch if overlapping current selection
+    useEffect(() => {
+        let pusher: any;
+        let channel: any;
+        (async () => {
+            try {
+                const { default: Pusher } = await import('pusher-js');
+                // Public key/cluster must be set in env and surfaced to client via NEXT_PUBLIC_
+                const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
+                const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string | undefined;
+                if (!key || !cluster) return;
+                pusher = new Pusher(key as string, { cluster });
+                channel = pusher.subscribe('inventory');
+                channel.bind('update', (evt: { type: string; payload: any }) => {
+                    if (!checkIn || !checkOut) return;
+                    const s = evt.payload?.checkIn ?? evt.payload?.startDate;
+                    const e = evt.payload?.checkOut ?? evt.payload?.endDate;
+                    if (!s || !e) return;
+                    const evStart = new Date(s);
+                    const evEnd = new Date(e);
+                    // overlap check
+                    const overlaps = evStart < checkOut && evEnd > checkIn;
+                    if (overlaps) {
+                        // refetch availability
+                        handleDateChange({ checkIn, checkOut });
+                    }
+                });
+            } catch {
+                // ignore when pusher not configured
+            }
+        })();
+        return () => {
+            try {
+                if (channel) channel.unbind_all();
+                if (pusher) pusher.unsubscribe('inventory');
+            } catch {}
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [checkIn?.toISOString(), checkOut?.toISOString()]);
 
     const handleRoomSelect = (roomId: string) => {
         const room = availableRooms.find((r) => r.id === roomId);
@@ -80,9 +125,7 @@ export default function BookPage() {
                             <a href="/" className="text-neutral-600 hover:text-neutral-900 transition-colors">
                                 Home
                             </a>
-                            <a href="/rooms" className="text-neutral-600 hover:text-neutral-900 transition-colors">
-                                Rooms
-                            </a>
+                            {/* Rooms link removed */}
                             <a href="/contact" className="text-neutral-600 hover:text-neutral-900 transition-colors">
                                 Contact
                             </a>

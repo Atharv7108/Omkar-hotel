@@ -25,9 +25,12 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        if (checkInDate < new Date()) {
+        // Allow same-day check-in: compare against start of today (local server time)
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if (checkInDate < startOfToday) {
             return NextResponse.json(
-                { error: 'Check-in date cannot be in the past' },
+                { error: 'Check-in date cannot be before today' },
                 { status: 400 }
             );
         }
