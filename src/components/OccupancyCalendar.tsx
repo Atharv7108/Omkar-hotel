@@ -257,6 +257,25 @@ export default function OccupancyCalendar() {
         }
     };
 
+    // Sort rooms: Alphanumeric prefixes (B1, B2) first, then numeric-only (01, 101)
+    const sortedRooms = useMemo(() => {
+        return [...rooms].sort((a, b) => {
+            const aNum = a.roomNumber;
+            const bNum = b.roomNumber;
+            
+            // Check if room number starts with a letter
+            const aHasLetter = /^[A-Za-z]/.test(aNum);
+            const bHasLetter = /^[A-Za-z]/.test(bNum);
+            
+            // Rooms with letter prefixes come first
+            if (aHasLetter && !bHasLetter) return -1;
+            if (!aHasLetter && bHasLetter) return 1;
+            
+            // If both have letters or both don't, sort naturally
+            return aNum.localeCompare(bNum, undefined, { numeric: true, sensitivity: 'base' });
+        });
+    }, [rooms]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -356,7 +375,7 @@ export default function OccupancyCalendar() {
                             </tr>
                         </thead>
                         <tbody>
-                            {rooms.map((room) => (
+                            {sortedRooms.map((room) => (
                                 <tr key={room.id} className="hover:bg-slate-50/50">
                                     {/* Room info */}
                                     <td className="sticky left-0 z-10 bg-white border-b border-r border-slate-100 px-3 py-2">
@@ -446,7 +465,7 @@ export default function OccupancyCalendar() {
                         required
                     >
                         <option value="">Select Room</option>
-                        {rooms.map((r) => (
+                        {sortedRooms.map((r) => (
                             <option key={r.id} value={r.id}>
                                 Room {r.roomNumber}
                             </option>

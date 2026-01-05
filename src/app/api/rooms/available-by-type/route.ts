@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
             // Sort floor options by rate (cheapest first)
             floorOptions.sort((a, b) => a.baseRate - b.baseRate);
 
-            // Parse amenities
+            // Parse amenities from first room
             let amenities: string[] = [];
             if (typeof sampleRoom.amenities === 'string') {
                 try {
@@ -180,16 +180,25 @@ export async function GET(request: NextRequest) {
                 amenities = sampleRoom.amenities as string[];
             }
             
-            // Get images from first room
-            let images: string[] = [];
-            if (typeof sampleRoom.images === 'string') {
-                try {
-                    images = JSON.parse(sampleRoom.images);
-                } catch {
-                    images = [];
+            // Collect images from ALL rooms in this type (not just first room)
+            const allImages: string[] = [];
+            for (const room of rooms) {
+                let roomImages: string[] = [];
+                if (typeof room.images === 'string') {
+                    try {
+                        roomImages = JSON.parse(room.images);
+                    } catch {
+                        roomImages = [];
+                    }
+                } else if (Array.isArray(room.images)) {
+                    roomImages = room.images as string[];
                 }
-            } else if (Array.isArray(sampleRoom.images)) {
-                images = sampleRoom.images as string[];
+                // Add unique images only
+                for (const img of roomImages) {
+                    if (img && !allImages.includes(img)) {
+                        allImages.push(img);
+                    }
+                }
             }
 
             // Calculate totals
@@ -209,7 +218,7 @@ export async function GET(request: NextRequest) {
                 maxOccupancy: sampleRoom.maxOccupancy,
                 extraGuestCharge: sampleRoom.extraGuestCharge?.toNumber() ?? null,
                 amenities,
-                images,
+                images: allImages,
                 floorOptions,
             });
         }
