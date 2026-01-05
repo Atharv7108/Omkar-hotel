@@ -158,11 +158,11 @@ export async function pushBookingToPMS(
                     action: 'PUSH_BOOKING',
                     direction: 'OUTBOUND',
                     status: 'SUCCESS',
-                    payload: {
+                    payload: JSON.parse(JSON.stringify({
                         pmsData,
                         response,
                         retryCount
-                    }
+                    }))
                 }
             })
 

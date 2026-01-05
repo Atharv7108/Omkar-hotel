@@ -44,6 +44,7 @@ async function main() {
                     },
                 },
             },
+            include: { rates: true },
         }),
         prisma.room.create({
             data: {
@@ -75,6 +76,7 @@ async function main() {
                     },
                 },
             },
+            include: { rates: true },
         }),
         prisma.room.create({
             data: {
@@ -110,6 +112,7 @@ async function main() {
                     },
                 },
             },
+            include: { rates: true },
         }),
         prisma.room.create({
             data: {
@@ -144,6 +147,7 @@ async function main() {
                     },
                 },
             },
+            include: { rates: true },
         }),
         prisma.room.create({
             data: {
@@ -179,6 +183,7 @@ async function main() {
                     },
                 },
             },
+            include: { rates: true },
         }),
         prisma.room.create({
             data: {
@@ -210,6 +215,7 @@ async function main() {
                     },
                 },
             },
+            include: { rates: true },
         }),
     ]);
 

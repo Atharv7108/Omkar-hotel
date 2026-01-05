@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BookingDetailsDrawer } from '@/components/admin/BookingDetailsDrawer';
+import NewBookingModal from '@/components/admin/NewBookingModal';
 
 interface Booking {
     id: string;
@@ -24,6 +26,9 @@ export default function BookingsManagementPage() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [newModalOpen, setNewModalOpen] = useState(false);
+    const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
 
     const fetchBookings = async () => {
         setLoading(true);
@@ -95,17 +100,17 @@ export default function BookingsManagementPage() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'CONFIRMED':
-                return 'bg-blue-100 text-blue-700';
+                return 'bg-blue-100 text-blue-700 border border-blue-200';
             case 'CHECKED_IN':
-                return 'bg-green-100 text-green-700';
+                return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
             case 'CHECKED_OUT':
-                return 'bg-neutral-100 text-neutral-700';
+                return 'bg-slate-100 text-slate-600 border border-slate-200';
             case 'PENDING':
-                return 'bg-yellow-100 text-yellow-700';
+                return 'bg-amber-100 text-amber-700 border border-amber-200';
             case 'CANCELLED':
-                return 'bg-red-100 text-red-700';
+                return 'bg-red-100 text-red-700 border border-red-200';
             default:
-                return 'bg-neutral-100 text-neutral-700';
+                return 'bg-slate-100 text-slate-600 border border-slate-200';
         }
     };
 
@@ -120,7 +125,13 @@ export default function BookingsManagementPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-full border-4 border-slate-200"></div>
+                        <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-teal-500 border-t-transparent animate-spin"></div>
+                    </div>
+                    <p className="text-sm text-slate-500">Loading bookings...</p>
+                </div>
             </div>
         );
     }
@@ -130,25 +141,38 @@ export default function BookingsManagementPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-neutral-900">Booking Management</h1>
-                    <p className="text-neutral-600 mt-1">View and manage all bookings</p>
+                    <h1 className="text-2xl font-semibold text-slate-800">Booking Management</h1>
+                    <p className="text-slate-500 mt-1">View and manage all bookings</p>
                 </div>
-                <button className="btn-primary">+ New Booking</button>
+                <button 
+                    className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm"
+                    onClick={() => setNewModalOpen(true)}
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Booking
+                </button>
             </div>
 
             {/* Search & Filter */}
-            <div className="card p-6">
+            <div className="bg-white rounded-xl p-5 border border-slate-200/60 shadow-sm">
                 <div className="flex flex-col md:flex-row gap-4">
                     {/* Search */}
                     <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-                        <input
-                            type="text"
-                            placeholder="Search by booking ref, guest name, or room..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="input-field flex-1"
-                        />
-                        <button type="submit" className="btn-secondary px-6">
+                        <div className="relative flex-1">
+                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search by booking ref, guest name, or room..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all"
+                            />
+                        </div>
+                        <button type="submit" className="px-5 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors">
                             Search
                         </button>
                     </form>
@@ -165,12 +189,12 @@ export default function BookingsManagementPage() {
                             <button
                                 key={tab.key}
                                 onClick={() => setFilter(tab.key)}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${filter === tab.key
-                                    ? 'bg-brand-primary text-white'
-                                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === tab.key
+                                    ? 'bg-teal-500 text-white shadow-sm'
+                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                                     }`}
                             >
-                                {tab.label} ({tab.count})
+                                {tab.label} <span className="ml-1 opacity-70">({tab.count})</span>
                             </button>
                         ))}
                     </div>
@@ -178,78 +202,87 @@ export default function BookingsManagementPage() {
             </div>
 
             {/* Bookings Table */}
-            <div className="card overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-neutral-50 border-b border-neutral-200">
+                        <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Booking Ref
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Guest
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Room
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Check-in
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Check-out
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Amount
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Status
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-neutral-200">
-                            {bookings.map((booking) => (
-                                <tr key={booking.id} className="hover:bg-neutral-50 transition-colors">
-                                    <td className="px-6 py-4 text-sm font-mono text-neutral-900">
+                        <tbody>
+                            {bookings.map((booking, idx) => (
+                                <tr key={booking.id} className={`hover:bg-slate-50/50 transition-colors ${idx !== bookings.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                                    <td className="px-6 py-4 text-sm font-mono text-slate-700">
                                         {booking.bookingReference}
                                         {booking.pmsBookingId && (
-                                            <span className="ml-2 text-xs text-green-600" title="Synced to PMS">
-                                                ✓ PMS
+                                            <span className="ml-2 inline-flex items-center text-xs text-emerald-600" title="Synced to PMS">
+                                                <svg className="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                </svg>
+                                                PMS
                                             </span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-neutral-900">{booking.guestName}</div>
-                                        <div className="text-xs text-neutral-600">{booking.guestPhone}</div>
+                                        <div className="text-sm font-medium text-slate-800">{booking.guestName}</div>
+                                        <div className="text-xs text-slate-500">{booking.guestPhone}</div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-neutral-900">{booking.room}</td>
-                                    <td className="px-6 py-4 text-sm text-neutral-600">
+                                    <td className="px-6 py-4 text-sm text-slate-700">{booking.room}</td>
+                                    <td className="px-6 py-4 text-sm text-slate-600">
                                         {new Date(booking.checkIn).toLocaleDateString('en-IN')}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-neutral-600">
+                                    <td className="px-6 py-4 text-sm text-slate-600">
                                         {new Date(booking.checkOut).toLocaleDateString('en-IN')}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="text-sm font-semibold text-neutral-900">
+                                        <div className="text-sm font-semibold text-slate-800">
                                             ₹{booking.totalAmount.toLocaleString('en-IN')}
                                         </div>
-                                        <div className="text-xs text-neutral-600">
+                                        <div className="text-xs text-slate-500">
                                             Paid: ₹{booking.paidAmount.toLocaleString('en-IN')}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                                            {booking.status}
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                                            {booking.status.replace('_', ' ')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-1.5">
+                                            <button
+                                                onClick={() => { setActiveBooking(booking); setDrawerOpen(true); }}
+                                                className="text-xs px-3 py-1.5 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors font-medium"
+                                            >
+                                                View
+                                            </button>
                                             {booking.status === 'PENDING' && (
                                                 <button
                                                     onClick={() => handleStatusChange(booking.id, 'CONFIRMED', booking.bookingReference)}
-                                                    className="text-xs px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                                    className="text-xs px-3 py-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium"
                                                 >
                                                     Confirm
                                                 </button>
@@ -257,7 +290,7 @@ export default function BookingsManagementPage() {
                                             {booking.status === 'CONFIRMED' && (
                                                 <button
                                                     onClick={() => handleStatusChange(booking.id, 'CHECKED_IN', booking.bookingReference)}
-                                                    className="text-xs px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                                                    className="text-xs px-3 py-1.5 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors font-medium"
                                                 >
                                                     Check-in
                                                 </button>
@@ -265,7 +298,7 @@ export default function BookingsManagementPage() {
                                             {booking.status === 'CHECKED_IN' && (
                                                 <button
                                                     onClick={() => handleStatusChange(booking.id, 'CHECKED_OUT', booking.bookingReference)}
-                                                    className="text-xs px-3 py-1 bg-neutral-500 text-white rounded hover:bg-neutral-600"
+                                                    className="text-xs px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 transition-colors font-medium"
                                                 >
                                                     Check-out
                                                 </button>
@@ -273,7 +306,7 @@ export default function BookingsManagementPage() {
                                             {!['CANCELLED', 'CHECKED_OUT'].includes(booking.status) && (
                                                 <button
                                                     onClick={() => handleStatusChange(booking.id, 'CANCELLED', booking.bookingReference)}
-                                                    className="text-xs px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                                    className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors font-medium"
                                                 >
                                                     Cancel
                                                 </button>
@@ -287,10 +320,14 @@ export default function BookingsManagementPage() {
                 </div>
 
                 {bookings.length === 0 && (
-                    <div className="p-12 text-center">
-                        <div className="text-6xl mb-4">📅</div>
-                        <h3 className="text-xl font-semibold text-neutral-900 mb-2">No bookings found</h3>
-                        <p className="text-neutral-600">
+                    <div className="p-16 text-center">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-700 mb-2">No bookings found</h3>
+                        <p className="text-slate-500 text-sm">
                             {searchTerm
                                 ? 'Try adjusting your search term'
                                 : bookings.length === 0
@@ -300,6 +337,21 @@ export default function BookingsManagementPage() {
                     </div>
                 )}
             </div>
+
+            {/* Details Drawer */}
+            <BookingDetailsDrawer
+                open={drawerOpen}
+                booking={activeBooking as any}
+                onClose={() => setDrawerOpen(false)}
+                onChangeStatus={handleStatusChange}
+            />
+
+            {/* New Booking Modal */}
+            <NewBookingModal
+                open={newModalOpen}
+                onClose={() => setNewModalOpen(false)}
+                onCreated={fetchBookings}
+            />
         </div>
     );
 }

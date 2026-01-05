@@ -21,9 +21,8 @@ export async function GET(
                         },
                     },
                 },
-                transactions: {
-                    orderBy: { createdAt: 'desc' },
-                },
+                transaction: true,
+                addons: true,
             },
         });
 
@@ -31,17 +30,13 @@ export async function GET(
             return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
         }
 
-        // Parse addons
-        const addons = typeof booking.addons === 'string' ? JSON.parse(booking.addons) : booking.addons;
-
         const formattedBooking = {
             ...booking,
-            addons,
             totalAmount: booking.totalAmount.toNumber(),
-            transactions: booking.transactions.map(t => ({
-                ...t,
-                amount: t.amount.toNumber(),
-            })),
+            transaction: booking.transaction ? {
+                ...booking.transaction,
+                amount: booking.transaction.amount.toNumber(),
+            } : null,
         };
 
         return NextResponse.json({ booking: formattedBooking }, { status: 200 });

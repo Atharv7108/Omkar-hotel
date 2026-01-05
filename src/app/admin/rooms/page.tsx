@@ -154,15 +154,15 @@ export default function RoomsManagementPage() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'AVAILABLE':
-                return 'bg-green-100 text-green-700';
+                return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
             case 'OCCUPIED':
-                return 'bg-red-100 text-red-700';
+                return 'bg-blue-100 text-blue-700 border border-blue-200';
             case 'CLEANING':
-                return 'bg-yellow-100 text-yellow-700';
+                return 'bg-amber-100 text-amber-700 border border-amber-200';
             case 'MAINTENANCE':
-                return 'bg-orange-100 text-orange-700';
+                return 'bg-orange-100 text-orange-700 border border-orange-200';
             default:
-                return 'bg-neutral-100 text-neutral-700';
+                return 'bg-slate-100 text-slate-600 border border-slate-200';
         }
     };
 
@@ -185,7 +185,13 @@ export default function RoomsManagementPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-full border-4 border-slate-200"></div>
+                        <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-teal-500 border-t-transparent animate-spin"></div>
+                    </div>
+                    <p className="text-sm text-slate-500">Loading rooms...</p>
+                </div>
             </div>
         );
     }
@@ -195,8 +201,8 @@ export default function RoomsManagementPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-neutral-900">Room Management</h1>
-                    <p className="text-neutral-600 mt-1">Manage room status and availability</p>
+                    <h1 className="text-2xl font-semibold text-slate-800">Room Management</h1>
+                    <p className="text-slate-500 mt-1">Manage room status and availability</p>
                 </div>
                 <button
                     onClick={() => {
@@ -204,14 +210,17 @@ export default function RoomsManagementPage() {
                         setSelectedRoom(null);
                         setModalOpen(true);
                     }}
-                    className="btn-primary"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm"
                 >
-                    + Add New Room
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add New Room
                 </button>
             </div>
 
             {/* Status Filter Tabs */}
-            <div className="card p-4">
+            <div className="bg-white rounded-xl p-4 border border-slate-200/60 shadow-sm">
                 <div className="flex flex-wrap gap-2">
                     {[
                         { key: 'all', label: 'All Rooms', count: statusCounts.all },
@@ -223,30 +232,30 @@ export default function RoomsManagementPage() {
                         <button
                             key={tab.key}
                             onClick={() => setFilter(tab.key)}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === tab.key
-                                ? 'bg-brand-primary text-white'
-                                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                            className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${filter === tab.key
+                                ? 'bg-teal-500 text-white shadow-sm'
+                                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                                 }`}
                         >
-                            {tab.label} ({tab.count})
+                            {tab.label} <span className="ml-1 opacity-70">({tab.count})</span>
                         </button>
                     ))}
                 </div>
             </div>
 
             {/* Rooms Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredRooms.map((room) => (
-                    <div key={room.id} className="card p-6">
+                    <div key={room.id} className="bg-white rounded-xl p-5 border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow">
                         {/* Room Header */}
                         <div className="flex items-start justify-between mb-4">
                             <div>
-                                <h3 className="text-2xl font-bold text-neutral-900">
+                                <h3 className="text-xl font-bold text-slate-800">
                                     Room {room.roomNumber}
                                 </h3>
-                                <p className="text-sm text-neutral-600">{getRoomTypeLabel(room.type)}</p>
+                                <p className="text-sm text-slate-500">{getRoomTypeLabel(room.type)}</p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(room.status)}`}>
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(room.status)}`}>
                                 {room.status}
                             </span>
                         </div>
@@ -254,24 +263,24 @@ export default function RoomsManagementPage() {
                         {/* Room Details */}
                         <div className="space-y-3 mb-4">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-neutral-600">Capacity</span>
-                                <span className="font-medium text-neutral-900">{room.capacity} guests</span>
+                                <span className="text-slate-500">Capacity</span>
+                                <span className="font-medium text-slate-700">{room.capacity} guests</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-neutral-600">Base Rate</span>
-                                <span className="font-medium text-neutral-900">₹{room.baseRate.toLocaleString('en-IN')}/night</span>
+                                <span className="text-slate-500">Base Rate</span>
+                                <span className="font-semibold text-slate-800">₹{room.baseRate.toLocaleString('en-IN')}/night</span>
                             </div>
                         </div>
 
                         {/* Status Change Dropdown */}
                         <div>
-                            <label className="block text-xs font-semibold text-neutral-700 mb-2">
+                            <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
                                 Update Status
                             </label>
                             <select
                                 value={room.status}
                                 onChange={(e) => handleStatusChange(room.id, e.target.value)}
-                                className="input-field text-sm"
+                                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all bg-white"
                             >
                                 <option value="AVAILABLE">Available</option>
                                 <option value="OCCUPIED">Occupied</option>
@@ -282,22 +291,24 @@ export default function RoomsManagementPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-4 pt-4 border-t border-neutral-200 flex gap-2">
+                        <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
                             <button
                                 onClick={() => {
                                     setModalMode('edit');
                                     setSelectedRoom(room);
                                     setModalOpen(true);
                                 }}
-                                className="flex-1 btn-secondary text-sm py-2"
+                                className="flex-1 px-3 py-2 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors"
                             >
                                 Edit Details
                             </button>
                             <button
                                 onClick={() => handleDeleteRoom(room.id, room.roomNumber)}
-                                className="px-3 py-2 text-neutral-600 hover:text-red-600 transition-colors"
+                                className="px-3 py-2 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
                             >
-                                🗑️
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -305,12 +316,16 @@ export default function RoomsManagementPage() {
             </div>
 
             {filteredRooms.length === 0 && (
-                <div className="card p-12 text-center">
-                    <div className="text-6xl mb-4">🏨</div>
-                    <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                <div className="bg-white rounded-xl p-16 border border-slate-200/60 shadow-sm text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-700 mb-2">
                         No rooms found
                     </h3>
-                    <p className="text-neutral-600">
+                    <p className="text-slate-500 text-sm">
                         {rooms.length === 0
                             ? 'Click "Add New Room" to create your first room'
                             : 'No rooms match the selected filter'}

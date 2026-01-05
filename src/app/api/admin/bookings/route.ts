@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
             include: {
                 guest: true,
                 room: true,
-                transactions: true,
+                transaction: true,
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         const formattedBookings = bookings.map((booking) => ({
             id: booking.id,
             bookingReference: booking.bookingReference,
+            roomId: booking.roomId,
             guestName: booking.guest.fullName,
             guestEmail: booking.guest.email,
             guestPhone: booking.guest.phone,
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
             checkOut: booking.checkOut.toISOString().split('T')[0],
             status: booking.status,
             totalAmount: booking.totalAmount.toNumber(),
-            paidAmount: booking.transactions.reduce((sum, t) => sum + t.amount.toNumber(), 0),
+            paidAmount: booking.transaction ? booking.transaction.amount.toNumber() : 0,
             guests: booking.numberOfGuests,
             createdAt: booking.createdAt,
             pmsBookingId: booking.pmsBookingId,
@@ -165,22 +166,30 @@ export async function POST(request: NextRequest) {
                 checkOut,
                 numberOfGuests: validatedData.numberOfGuests,
                 specialRequests: validatedData.specialRequests,
-                addons: JSON.stringify(selectedAddons),
+                addons: selectedAddons.length > 0 ? {
+                    create: selectedAddons.map((a: { id: string; name: string; price: number }) => ({
+                        addonType: a.id,
+                        name: a.name,
+                        quantity: 1,
+                        price: a.price * nights,
+                    })),
+                } : undefined,
                 totalAmount,
                 status: validatedData.paidAmount >= totalAmount ? 'CONFIRMED' : 'PENDING',
-                transactions: validatedData.paidAmount > 0 ? {
+                transaction: validatedData.paidAmount > 0 ? {
                     create: {
                         amount: validatedData.paidAmount,
                         paymentMethod: validatedData.paymentMethod,
                         status: 'COMPLETED',
-                        transactionReference: `TXN-${Date.now()}`,
+                        paymentGatewayId: `TXN-${Date.now()}`,
                     },
                 } : undefined,
             },
             include: {
                 guest: true,
                 room: true,
-                transactions: true,
+                transaction: true,
+                addons: true,
             },
         });
 

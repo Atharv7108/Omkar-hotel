@@ -68,7 +68,7 @@ export async function PATCH(
             include: {
                 guest: true,
                 room: true,
-                transactions: true,
+                transaction: true,
             },
         });
 

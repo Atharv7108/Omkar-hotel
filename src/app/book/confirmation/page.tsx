@@ -1,9 +1,20 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
-export default function ConfirmationPage() {
+function ConfirmationLoading() {
+    return (
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-primary mx-auto mb-4"></div>
+                <p className="text-neutral-600">Loading...</p>
+            </div>
+        </div>
+    );
+}
+
+function ConfirmationContent() {
     const searchParams = useSearchParams();
     const bookingRef = searchParams.get('bookingRef');
     const [showConfetti, setShowConfetti] = useState(true);
@@ -161,5 +172,13 @@ export default function ConfirmationPage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function ConfirmationPage() {
+    return (
+        <Suspense fallback={<ConfirmationLoading />}>
+            <ConfirmationContent />
+        </Suspense>
     );
 }

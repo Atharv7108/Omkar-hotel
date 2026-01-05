@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 
@@ -18,7 +18,18 @@ interface GuestFormData {
     specialRequests?: string;
 }
 
-export default function GuestDetailsPage() {
+function GuestDetailsLoading() {
+    return (
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-primary mx-auto mb-4"></div>
+                <p className="text-neutral-600">Loading...</p>
+            </div>
+        </div>
+    );
+}
+
+function GuestDetailsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -377,5 +388,13 @@ export default function GuestDetailsPage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function GuestDetailsPage() {
+    return (
+        <Suspense fallback={<GuestDetailsLoading />}>
+            <GuestDetailsContent />
+        </Suspense>
     );
 }

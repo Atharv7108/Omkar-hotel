@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Addon {
@@ -49,7 +49,18 @@ const AVAILABLE_ADDONS: Addon[] = [
     },
 ];
 
-export default function AddonsPage() {
+function AddonsLoading() {
+    return (
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-primary mx-auto mb-4"></div>
+                <p className="text-neutral-600">Loading...</p>
+            </div>
+        </div>
+    );
+}
+
+function AddonsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -305,5 +316,13 @@ export default function AddonsPage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function AddonsPage() {
+    return (
+        <Suspense fallback={<AddonsLoading />}>
+            <AddonsContent />
+        </Suspense>
     );
 }

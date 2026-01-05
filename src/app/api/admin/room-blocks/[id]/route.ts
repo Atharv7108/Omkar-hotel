@@ -3,9 +3,9 @@ import { prisma } from '@/lib/db';
 import { broadcastInventory } from '@/lib/realtime';
 
 // DELETE /api/admin/room-blocks/[id]
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const deleted = await prisma.roomBlock.delete({ where: { id } });
     await broadcastInventory({
       type: 'inventory:block:deleted',

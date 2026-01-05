@@ -9,6 +9,7 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Use direct connection for migrations (avoids PgBouncer prepared statement issues)
+    url: process.env["DIRECT_URL"] || process.env["DATABASE_URL"],
   },
 });
