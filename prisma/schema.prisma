@@ -26,6 +26,16 @@ enum RoomStatus {
   OUT_OF_ORDER
 }
 
+// Room View
+enum RoomView {
+  VALLEY_VIEW
+  GARDEN_VIEW
+  MOUNTAIN_VIEW
+  CITY_VIEW
+  POOL_VIEW
+  STANDARD
+}
+
 // Booking Status
 enum BookingStatus {
   PENDING
@@ -70,24 +80,27 @@ enum SyncStatus {
 // ============= CORE TABLES =============
 
 model Room {
-  id          String      @id @default(uuid())
-  roomNumber  String      @unique @map("room_number")
-  type        RoomType
-  capacity    Int
-  amenities   Json        @default("[]") // Array of amenities
-  description String?
-  images      Json        @default("[]") // Array of image URLs
-  status      RoomStatus  @default(AVAILABLE)
-  floor       Int?
-  size        Int?        // Size in sq ft
+  id              String      @id @default(uuid())
+  roomNumber      String      @unique @map("room_number")
+  type            RoomType
+  view            RoomView    @default(STANDARD)
+  baseOccupancy   Int         @default(2) @map("base_occupancy") // Guests included in base rate
+  maxOccupancy    Int         @default(3) @map("max_occupancy")  // Maximum guests allowed
+  extraGuestCharge Decimal?   @db.Decimal(10, 2) @map("extra_guest_charge") // Charge per extra guest
+  amenities       Json        @default("[]") // Array of amenities
+  description     String?
+  images          Json        @default("[]") // Array of image URLs
+  status          RoomStatus  @default(AVAILABLE)
+  floor           Int?
+  size            Int?        // Size in sq ft
   
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
   
   // Relations
-  rates       RoomRate[]
-  bookings    Booking[]
-  blocks      RoomBlock[]
+  rates           RoomRate[]
+  bookings        Booking[]
+  blocks          RoomBlock[]
   
   @@map("rooms")
 }

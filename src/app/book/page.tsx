@@ -2,25 +2,37 @@
 
 import { useEffect, useState } from 'react';
 import { DateRangePicker } from '@/components/DateRangePicker';
-import { RoomCard } from '@/components/RoomCard';
-import { BookingSummary } from '@/components/BookingSummary';
 
-interface Room {
-    id: string;
-    roomNumber: string;
+interface FloorOption {
+    floor: number | null;
+    floorLabel: string;
+    baseRate: number;
+    availableCount: number;
+    totalCount: number;
+    roomIds: string[];
+}
+
+interface RoomTypeGroup {
     type: string;
-    capacity: number;
-    description: string | null;
+    typeLabel: string;
+    description: string;
+    minRate: number;
+    maxRate: number;
+    totalAvailable: number;
+    totalRooms: number;
+    baseOccupancy: number;
+    maxOccupancy: number;
+    extraGuestCharge: number | null;
     amenities: string[];
     images: string[];
-    baseRate: number;
+    floorOptions: FloorOption[];
 }
 
 export default function BookPage() {
     const [checkIn, setCheckIn] = useState<Date | null>(null);
     const [checkOut, setCheckOut] = useState<Date | null>(null);
-    const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
-    const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+    const [roomTypes, setRoomTypes] = useState<RoomTypeGroup[]>([]);
+    const [selectedType, setSelectedType] = useState<RoomTypeGroup | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -33,11 +45,10 @@ export default function BookPage() {
             setError(null);
 
             try {
-                const url = `/api/rooms/available?checkIn=${encodeURIComponent(range.checkIn.toISOString())}&checkOut=${encodeURIComponent(range.checkOut.toISOString())}`;
+                const url = `/api/rooms/available-by-type?checkIn=${encodeURIComponent(range.checkIn.toISOString())}&checkOut=${encodeURIComponent(range.checkOut.toISOString())}`;
                 const response = await fetch(url);
 
                 if (!response.ok) {
-                    // Try to extract server-provided error message
                     try {
                         const errJson = await response.json();
                         throw new Error(errJson?.error || 'Failed to fetch available rooms');
@@ -47,16 +58,16 @@ export default function BookPage() {
                 }
 
                 const data = await response.json();
-                setAvailableRooms(data.data || []);
+                setRoomTypes(data.data || []);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An error occurred');
-                setAvailableRooms([]);
+                setRoomTypes([]);
             } finally {
                 setLoading(false);
             }
         } else {
-            setAvailableRooms([]);
-            setSelectedRoom(null);
+            setRoomTypes([]);
+            setSelectedType(null);
         }
     };
 
@@ -67,7 +78,6 @@ export default function BookPage() {
         (async () => {
             try {
                 const { default: Pusher } = await import('pusher-js');
-                // Public key/cluster must be set in env and surfaced to client via NEXT_PUBLIC_
                 const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
                 const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string | undefined;
                 if (!key || !cluster) return;
@@ -80,10 +90,8 @@ export default function BookPage() {
                     if (!s || !e) return;
                     const evStart = new Date(s);
                     const evEnd = new Date(e);
-                    // overlap check
                     const overlaps = evStart < checkOut && evEnd > checkIn;
                     if (overlaps) {
-                        // refetch availability
                         handleDateChange({ checkIn, checkOut });
                     }
                 });
@@ -100,17 +108,19 @@ export default function BookPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [checkIn?.toISOString(), checkOut?.toISOString()]);
 
-    const handleRoomSelect = (roomId: string) => {
-        const room = availableRooms.find((r) => r.id === roomId);
-        if (room && checkIn && checkOut) {
-            // Navigate to addons page with booking details
-            window.location.href = `/book/addons?roomId=${roomId}&checkIn=${checkIn.toISOString()}&checkOut=${checkOut.toISOString()}`;
+    const handleFloorSelect = (roomType: RoomTypeGroup, floorOption: FloorOption) => {
+        if (checkIn && checkOut && floorOption.availableCount > 0) {
+            // Pass first available room ID from the floor option
+            const roomId = floorOption.roomIds[0];
+            window.location.href = `/book/addons?roomId=${roomId}&roomType=${roomType.type}&floor=${floorOption.floor}&checkIn=${checkIn.toISOString()}&checkOut=${checkOut.toISOString()}`;
         }
     };
 
     const nights = checkIn && checkOut
         ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
+
+    const totalAvailable = roomTypes.reduce((sum, rt) => sum + rt.totalAvailable, 0);
 
     return (
         <div className="min-h-screen bg-neutral-50">
@@ -125,7 +135,6 @@ export default function BookPage() {
                             <a href="/" className="text-neutral-600 hover:text-neutral-900 transition-colors">
                                 Home
                             </a>
-                            {/* Rooms link removed */}
                             <a href="/contact" className="text-neutral-600 hover:text-neutral-900 transition-colors">
                                 Contact
                             </a>
@@ -137,16 +146,6 @@ export default function BookPage() {
             {/* Main Content */}
             <main className="section">
                 <div className="container-custom">
-                    {/* Page Title */}
-                    <div className="text-center mb-12">
-                        <h1 className="text-5xl font-display font-bold mb-4 text-neutral-900">
-                            Book Your Stay
-                        </h1>
-                        <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-                            Select your dates to see available rooms and make a reservation
-                        </p>
-                    </div>
-
                     {/* Date Picker */}
                     <div className="mb-12">
                         <DateRangePicker onChange={handleDateChange} minNights={1} />
@@ -167,8 +166,8 @@ export default function BookPage() {
                         </div>
                     )}
 
-                    {/* Results */}
-                    {!loading && availableRooms.length === 0 && checkIn && checkOut && (
+                    {/* No Rooms Available */}
+                    {!loading && roomTypes.length === 0 && checkIn && checkOut && (
                         <div className="text-center py-12">
                             <div className="text-6xl mb-4">😔</div>
                             <h3 className="text-2xl font-semibold text-neutral-900 mb-2">
@@ -181,37 +180,25 @@ export default function BookPage() {
                         </div>
                     )}
 
-                    {!loading && availableRooms.length > 0 && (
-                        <div className="grid lg:grid-cols-3 gap-8">
-                            {/* Room List */}
-                            <div className="lg:col-span-2 space-y-6">
+                    {/* Room Types Grid */}
+                    {!loading && roomTypes.length > 0 && (
+                        <div>
+                            {/* Room Types List - Full Width */}
+                            <div className="space-y-6">
                                 <h2 className="text-2xl font-semibold text-neutral-900 mb-6">
-                                    {availableRooms.length} Room{availableRooms.length > 1 ? 's' : ''} Available
+                                    {totalAvailable} Room{totalAvailable !== 1 ? 's' : ''} Available
                                 </h2>
 
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    {availableRooms.map((room) => (
-                                        <RoomCard
-                                            key={room.id}
-                                            room={room}
+                                <div className="space-y-6">
+                                    {roomTypes.map((roomType) => (
+                                        <RoomTypeCard
+                                            key={roomType.type}
+                                            roomType={roomType}
                                             nights={nights}
-                                            onSelect={handleRoomSelect}
+                                            onFloorSelect={(floorOption) => handleFloorSelect(roomType, floorOption)}
                                         />
                                     ))}
                                 </div>
-                            </div>
-
-                            {/* Booking Summary Sidebar */}
-                            <div className="lg:col-span-1" id="booking-summary">
-                                <BookingSummary
-                                    room={selectedRoom ? {
-                                        type: selectedRoom.type,
-                                        roomNumber: selectedRoom.roomNumber,
-                                        baseRate: selectedRoom.baseRate,
-                                    } : undefined}
-                                    checkIn={checkIn || undefined}
-                                    checkOut={checkOut || undefined}
-                                />
                             </div>
                         </div>
                     )}
@@ -230,6 +217,189 @@ export default function BookPage() {
                     )}
                 </div>
             </main>
+        </div>
+    );
+}
+
+// Room Type Card Component
+function RoomTypeCard({ 
+    roomType, 
+    nights, 
+    onFloorSelect 
+}: { 
+    roomType: RoomTypeGroup; 
+    nights: number;
+    onFloorSelect: (floorOption: FloorOption) => void;
+}) {
+    const isAvailable = roomType.totalAvailable > 0;
+    const hasMultipleOptions = roomType.floorOptions.length > 1;
+
+    const displayAmenities = roomType.amenities.slice(0, 4);
+    const moreAmenities = roomType.amenities.length - 4;
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="flex flex-col md:flex-row">
+                {/* Image */}
+                <div className="md:w-1/3 relative">
+                    <div className="aspect-[4/3] md:aspect-auto md:h-full relative">
+                        {roomType.images.length > 0 ? (
+                            <img
+                                src={roomType.images[0]}
+                                alt={roomType.typeLabel}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center min-h-[200px]">
+                                <span className="text-4xl">🏨</span>
+                            </div>
+                        )}
+                        {/* Availability Badge */}
+                        <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-sm font-medium ${
+                            isAvailable 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                        }`}>
+                            {isAvailable 
+                                ? `${roomType.totalAvailable} available` 
+                                : 'Sold out'}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="md:w-2/3 p-6 flex flex-col">
+                    <div className="flex-1">
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-3">
+                            <div>
+                                <h3 className="text-xl font-semibold text-neutral-900">
+                                    {roomType.typeLabel}
+                                </h3>
+                                <p className="text-sm text-neutral-500 mt-1">
+                                    👥 {roomType.baseOccupancy}-{roomType.maxOccupancy} guests
+                                    {roomType.extraGuestCharge && roomType.extraGuestCharge > 0 && (
+                                        <span className="ml-2 text-amber-600">
+                                            (+₹{roomType.extraGuestCharge.toLocaleString('en-IN')} for 3rd guest)
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                {hasMultipleOptions ? (
+                                    <>
+                                        <p className="text-lg font-bold text-neutral-900">
+                                            From ₹{roomType.minRate.toLocaleString('en-IN')}
+                                        </p>
+                                        <p className="text-sm text-neutral-500">per night</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-2xl font-bold text-neutral-900">
+                                            ₹{roomType.minRate.toLocaleString('en-IN')}
+                                        </p>
+                                        <p className="text-sm text-neutral-500">per night</p>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-neutral-600 text-sm mb-4">
+                            {roomType.description}
+                        </p>
+
+                        {/* Amenities */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {displayAmenities.map((amenity) => (
+                                <span
+                                    key={amenity}
+                                    className="px-3 py-1 bg-neutral-100 text-neutral-700 text-xs rounded-full"
+                                >
+                                    {amenity}
+                                </span>
+                            ))}
+                            {moreAmenities > 0 && (
+                                <span className="px-3 py-1 bg-neutral-100 text-neutral-500 text-xs rounded-full">
+                                    +{moreAmenities} more
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Floor Options */}
+                    <div className="pt-4 border-t border-neutral-100">
+                        {hasMultipleOptions ? (
+                            <div className="space-y-3">
+                                <p className="text-sm font-medium text-neutral-700 mb-2">Choose your preference:</p>
+                                {roomType.floorOptions.map((option, index) => {
+                                    const optionTotal = option.baseRate * nights;
+                                    const optionAvailable = option.availableCount > 0;
+                                    return (
+                                        <div 
+                                            key={index}
+                                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                                                optionAvailable 
+                                                    ? 'border-neutral-200 hover:border-teal-300 hover:bg-teal-50/50 cursor-pointer' 
+                                                    : 'border-neutral-100 bg-neutral-50 opacity-60'
+                                            }`}
+                                            onClick={() => optionAvailable && onFloorSelect(option)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-lg">🏢</span>
+                                                <div>
+                                                    <p className="font-medium text-neutral-900">
+                                                        {option.floorLabel}
+                                                    </p>
+                                                    <p className="text-xs text-neutral-500">
+                                                        {optionAvailable 
+                                                            ? `${option.availableCount} room${option.availableCount > 1 ? 's' : ''} available`
+                                                            : 'Sold out'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-neutral-900">
+                                                    ₹{option.baseRate.toLocaleString('en-IN')}<span className="text-sm font-normal text-neutral-500">/night</span>
+                                                </p>
+                                                {nights > 0 && (
+                                                    <p className="text-xs text-neutral-500">
+                                                        Total: ₹{optionTotal.toLocaleString('en-IN')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    {nights > 0 && (
+                                        <p className="text-sm text-neutral-600">
+                                            Total for {nights} night{nights !== 1 ? 's' : ''}: 
+                                            <span className="font-semibold text-neutral-900 ml-1">
+                                                ₹{(roomType.minRate * nights).toLocaleString('en-IN')}
+                                            </span>
+                                        </p>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => onFloorSelect(roomType.floorOptions[0])}
+                                    disabled={!isAvailable}
+                                    className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+                                        isAvailable
+                                            ? 'bg-teal-600 text-white hover:bg-teal-700'
+                                            : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {isAvailable ? 'Select Room' : 'Sold Out'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

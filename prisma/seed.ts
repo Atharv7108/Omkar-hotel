@@ -1,4 +1,4 @@
-import { PrismaClient, RoomType, RoomStatus, RateType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
@@ -10,297 +10,57 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
     console.log('🌱 Seeding database...');
 
-    // Create sample rooms
-    const rooms = await Promise.all([
-        prisma.room.create({
-            data: {
-                roomNumber: '101',
-                type: RoomType.DELUXE,
-                capacity: 2,
-                floor: 1,
-                size: 300,
-                description: 'Luxurious deluxe room with stunning valley views and modern amenities.',
-                amenities: JSON.stringify([
-                    'King Size Bed',
-                    'Air Conditioning',
-                    'Free WiFi',
-                    'Smart TV',
-                    'Mini Bar',
-                    'Valley View',
-                    'Balcony',
-                ]),
-                images: JSON.stringify([
-                    '/images/rooms/deluxe-1.jpg',
-                    '/images/rooms/deluxe-2.jpg',
-                ]),
-                status: RoomStatus.AVAILABLE,
-                rates: {
-                    create: {
-                        baseRate: 3500,
-                        effectiveFrom: new Date('2025-01-01'),
-                        rateType: RateType.BASE,
-                        weekendMultiplier: 1.3,
-                        description: 'Standard rate for deluxe room',
-                    },
-                },
-            },
-            include: { rates: true },
-        }),
-        prisma.room.create({
-            data: {
-                roomNumber: '102',
-                type: RoomType.DELUXE,
-                capacity: 2,
-                floor: 1,
-                size: 300,
-                description: 'Elegant deluxe room with garden views and premium furnishings.',
-                amenities: JSON.stringify([
-                    'King Size Bed',
-                    'Air Conditioning',
-                    'Free WiFi',
-                    'Smart TV',
-                    'Mini Bar',
-                    'Garden View',
-                ]),
-                images: JSON.stringify([
-                    '/images/rooms/deluxe-3.jpg',
-                    '/images/rooms/deluxe-4.jpg',
-                ]),
-                status: RoomStatus.AVAILABLE,
-                rates: {
-                    create: {
-                        baseRate: 3500,
-                        effectiveFrom: new Date('2025-01-01'),
-                        rateType: RateType.BASE,
-                        weekendMultiplier: 1.3,
-                    },
-                },
-            },
-            include: { rates: true },
-        }),
-        prisma.room.create({
-            data: {
-                roomNumber: '201',
-                type: RoomType.SUITE,
-                capacity: 3,
-                floor: 2,
-                size: 450,
-                description: 'Spacious suite with separate living area and panoramic mountain views.',
-                amenities: JSON.stringify([
-                    'King Size Bed',
-                    'Sofa Bed',
-                    'Air Conditioning',
-                    'Free WiFi',
-                    'Smart TV',
-                    'Mini Bar',
-                    'Mountain View',
-                    'Balcony',
-                    'Jacuzzi',
-                ]),
-                images: JSON.stringify([
-                    '/images/rooms/suite-1.jpg',
-                    '/images/rooms/suite-2.jpg',
-                ]),
-                status: RoomStatus.AVAILABLE,
-                rates: {
-                    create: {
-                        baseRate: 5500,
-                        effectiveFrom: new Date('2025-01-01'),
-                        rateType: RateType.BASE,
-                        weekendMultiplier: 1.4,
-                        description: 'Premium suite rate',
-                    },
-                },
-            },
-            include: { rates: true },
-        }),
-        prisma.room.create({
-            data: {
-                roomNumber: '202',
-                type: RoomType.SUITE,
-                capacity: 3,
-                floor: 2,
-                size: 450,
-                description: 'Luxury suite with modern amenities and stunning valley views.',
-                amenities: JSON.stringify([
-                    'King Size Bed',
-                    'Sofa Bed',
-                    'Air Conditioning',
-                    'Free WiFi',
-                    'Smart TV',
-                    'Mini Bar',
-                    'Valley View',
-                    'Balcony',
-                    'Jacuzzi',
-                ]),
-                images: JSON.stringify([
-                    '/images/rooms/suite-3.jpg',
-                    '/images/rooms/suite-4.jpg',
-                ]),
-                status: RoomStatus.AVAILABLE,
-                rates: {
-                    create: {
-                        baseRate: 5500,
-                        effectiveFrom: new Date('2025-01-01'),
-                        rateType: RateType.BASE,
-                        weekendMultiplier: 1.4,
-                    },
-                },
-            },
-            include: { rates: true },
-        }),
-        prisma.room.create({
-            data: {
-                roomNumber: '301',
-                type: RoomType.FAMILY,
-                capacity: 5,
-                floor: 3,
-                size: 600,
-                description: 'Perfect for families! Spacious room with multiple beds and entertainment options.',
-                amenities: JSON.stringify([
-                    'Queen Size Bed',
-                    '2 Single Beds',
-                    'Air Conditioning',
-                    'Free WiFi',
-                    'Smart TV',
-                    'Mini Bar',
-                    'Kids Play Area',
-                    'Balcony',
-                    'Kitchenette',
-                ]),
-                images: JSON.stringify([
-                    '/images/rooms/family-1.jpg',
-                    '/images/rooms/family-2.jpg',
-                ]),
-                status: RoomStatus.AVAILABLE,
-                rates: {
-                    create: {
-                        baseRate: 6500,
-                        effectiveFrom: new Date('2025-01-01'),
-                        rateType: RateType.BASE,
-                        weekendMultiplier: 1.5,
-                        description: 'Family room rate',
-                    },
-                },
-            },
-            include: { rates: true },
-        }),
-        prisma.room.create({
-            data: {
-                roomNumber: '103',
-                type: RoomType.STANDARD,
-                capacity: 2,
-                floor: 1,
-                size: 250,
-                description: 'Comfortable standard room with all essential amenities.',
-                amenities: JSON.stringify([
-                    'Double Bed',
-                    'Air Conditioning',
-                    'Free WiFi',
-                    'TV',
-                    'City View',
-                ]),
-                images: JSON.stringify([
-                    '/images/rooms/standard-1.jpg',
-                    '/images/rooms/standard-2.jpg',
-                ]),
-                status: RoomStatus.AVAILABLE,
-                rates: {
-                    create: {
-                        baseRate: 2500,
-                        effectiveFrom: new Date('2025-01-01'),
-                        rateType: RateType.BASE,
-                        weekendMultiplier: 1.2,
-                        description: 'Standard room rate',
-                    },
-                },
-            },
-            include: { rates: true },
-        }),
-    ]);
+    // Clear existing data
+    console.log('🗑️ Clearing existing data...');
+    await prisma.roomBlock.deleteMany({});
+    await prisma.roomRate.deleteMany({});
+    await prisma.bookingAddon.deleteMany({});
+    await prisma.transaction.deleteMany({});
+    await prisma.booking.deleteMany({});
+    await prisma.room.deleteMany({});
+    await prisma.guest.deleteMany({});
+    await prisma.adminUser.deleteMany({});
+    await prisma.hotelConfig.deleteMany({});
+    console.log('✅ Existing data cleared');
 
-    console.log(`✅ Created ${rooms.length} rooms`);
+    // No sample rooms - admin will add rooms manually via admin panel
 
-    // Create seasonal rates (December-February peak season in Mahabaleshwar)
-    const seasonalRates = await Promise.all(
-        rooms.map((room) =>
-            prisma.roomRate.create({
-                data: {
-                    roomId: room.id,
-                    baseRate: room.rates[0].baseRate.toNumber() * 1.5,
-                    effectiveFrom: new Date('2025-12-01'),
-                    effectiveTo: new Date('2026-02-28'),
-                    rateType: RateType.SEASONAL,
-                    weekendMultiplier: 1.5,
-                    description: 'Peak season (Winter) rate',
-                },
-            })
-        )
-    );
-
-    console.log(`✅ Created ${seasonalRates.length} seasonal rates`);
-
-    // Create hotel configuration
+    // Create hotel configurations
     const configs = await Promise.all([
-        prisma.hotelConfig.create({
-            data: {
-                key: 'hotel_info',
-                value: JSON.stringify({
-                    name: 'Omkar Hotel',
-                    location: 'Mahabaleshwar',
-                    address: 'Main Market Road, Mahabaleshwar, Maharashtra 412806',
-                    phone: '+91 12345 67890',
-                    email: 'info@omkarhotel.com',
-                    checkInTime: '14:00',
-                    checkOutTime: '11:00',
-                }),
-                description: 'Basic hotel information',
+        prisma.hotelConfig.upsert({
+            where: { key: 'hotel_name' },
+            update: {},
+            create: {
+                key: 'hotel_name',
+                value: 'Omkar Hotel',
+                description: 'Hotel display name',
             },
         }),
-        prisma.hotelConfig.create({
-            data: {
-                key: 'tax_config',
-                value: JSON.stringify({
-                    gstRate: 12,
-                    serviceTax: 10,
-                }),
-                description: 'Tax configuration',
+        prisma.hotelConfig.upsert({
+            where: { key: 'check_in_time' },
+            update: {},
+            create: {
+                key: 'check_in_time',
+                value: '14:00',
+                description: 'Standard check-in time',
             },
         }),
-        prisma.hotelConfig.create({
-            data: {
-                key: 'addons',
-                value: JSON.stringify([
-                    {
-                        id: 'breakfast',
-                        name: 'Breakfast Package',
-                        price: 300,
-                        description: 'Complimentary breakfast for all guests',
-                        icon: '🍳',
-                    },
-                    {
-                        id: 'spa',
-                        name: 'Spa Treatment',
-                        price: 1500,
-                        description: 'Relaxing spa session (60 minutes)',
-                        icon: '💆',
-                    },
-                    {
-                        id: 'pickup',
-                        name: 'Airport/Station Pickup',
-                        price: 800,
-                        description: 'Pickup from Pune Airport or Satara Station',
-                        icon: '🚗',
-                    },
-                    {
-                        id: 'late_checkout',
-                        name: 'Late Checkout',
-                        price: 500,
-                        description: 'Extend checkout time till 2 PM',
-                        icon: '🕐',
-                    },
-                ]),
-                description: 'Available add-ons for bookings',
+        prisma.hotelConfig.upsert({
+            where: { key: 'check_out_time' },
+            update: {},
+            create: {
+                key: 'check_out_time',
+                value: '11:00',
+                description: 'Standard check-out time',
+            },
+        }),
+        prisma.hotelConfig.upsert({
+            where: { key: 'tax_rate' },
+            update: {},
+            create: {
+                key: 'tax_rate',
+                value: '18',
+                description: 'Tax rate percentage (GST)',
             },
         }),
     ]);
@@ -308,7 +68,6 @@ async function main() {
     console.log(`✅ Created ${configs.length} hotel configurations`);
 
     // Create admin user (password: admin123)
-    // In production, use proper password hashing with bcrypt
     const adminUser = await prisma.adminUser.create({
         data: {
             email: 'admin@omkarhotel.com',
@@ -320,7 +79,7 @@ async function main() {
 
     console.log(`✅ Created admin user: ${adminUser.email}`);
 
-    console.log('🎉 Seeding completed!');
+    console.log('🎉 Seeding completed! Add rooms from the admin panel.');
 }
 
 main()

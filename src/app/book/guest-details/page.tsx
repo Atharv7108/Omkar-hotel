@@ -40,13 +40,14 @@ function GuestDetailsContent() {
         formState: { errors },
     } = useForm<GuestFormData>();
 
-    // Get booking details from URL
+    // Get booking details from URL - support both roomId and roomType
     const roomId = searchParams.get('roomId');
+    const roomType = searchParams.get('roomType');
     const checkIn = searchParams.get('checkIn');
     const checkOut = searchParams.get('checkOut');
     const addons = searchParams.get('addons');
 
-    if (!roomId || !checkIn || !checkOut) {
+    if ((!roomId && !roomType) || !checkIn || !checkOut) {
         return (
             <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
                 <div className="text-center">
@@ -64,12 +65,14 @@ function GuestDetailsContent() {
         );
     }
 
+    const roomParam = roomId ? `roomId=${roomId}` : `roomType=${roomType}`;
+
     const onSubmit = async (data: GuestFormData) => {
         setIsSubmitting(true);
 
         // In a real app, this would create the guest and booking in the database
         console.log('Guest Details:', data);
-        console.log('Booking Details:', { roomId, checkIn, checkOut, addons });
+        console.log('Booking Details:', { roomId, roomType, checkIn, checkOut, addons });
 
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -91,7 +94,7 @@ function GuestDetailsContent() {
                         </a>
                         <div className="flex items-center gap-4">
                             <a
-                                href={`/book/addons?roomId=${roomId}&checkIn=${checkIn}&checkOut=${checkOut}`}
+                                href={`/book/addons?${roomParam}&checkIn=${checkIn}&checkOut=${checkOut}`}
                                 className="text-neutral-600 hover:text-neutral-900 transition-colors"
                             >
                                 ← Back to Add-ons

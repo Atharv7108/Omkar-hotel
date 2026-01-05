@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { updateRoomSchema } from '@/lib/validations/room';
 import { z } from 'zod';
 
@@ -88,7 +89,11 @@ export async function PUT(
             data: {
                 ...(validatedData.roomNumber && { roomNumber: validatedData.roomNumber }),
                 ...(validatedData.type && { type: validatedData.type }),
-                ...(validatedData.capacity && { capacity: validatedData.capacity }),
+                ...(validatedData.baseOccupancy !== undefined && { baseOccupancy: validatedData.baseOccupancy }),
+                ...(validatedData.maxOccupancy !== undefined && { maxOccupancy: validatedData.maxOccupancy }),
+                ...(validatedData.extraGuestCharge !== undefined && { 
+                    extraGuestCharge: validatedData.extraGuestCharge ? new Prisma.Decimal(validatedData.extraGuestCharge) : null 
+                }),
                 ...(validatedData.floor !== undefined && { floor: validatedData.floor }),
                 ...(validatedData.size && { size: validatedData.size }),
                 ...(validatedData.description && { description: validatedData.description }),
@@ -105,10 +110,10 @@ export async function PUT(
             await prisma.roomRate.create({
                 data: {
                     roomId: id,
-                    baseRate: validatedData.baseRate,
+                    baseRate: new Prisma.Decimal(validatedData.baseRate),
                     effectiveFrom: new Date(),
                     rateType: 'BASE',
-                    weekendMultiplier: 1.2,
+                    weekendMultiplier: new Prisma.Decimal('1.2'),
                 },
             });
         }

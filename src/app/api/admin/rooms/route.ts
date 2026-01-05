@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
             data: {
                 roomNumber: validatedData.roomNumber,
                 type: validatedData.type,
-                capacity: validatedData.capacity,
+                baseOccupancy: validatedData.baseOccupancy || 2,
+                maxOccupancy: validatedData.maxOccupancy || 3,
+                extraGuestCharge: validatedData.extraGuestCharge ? new Prisma.Decimal(validatedData.extraGuestCharge) : null,
                 floor: validatedData.floor,
                 size: validatedData.size,
                 description: validatedData.description,
@@ -100,8 +102,11 @@ export async function POST(request: NextRequest) {
         }
 
         console.error('Error creating room:', error);
+        // Return full error details for debugging
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorStack = error instanceof Error ? error.stack : undefined;
         return NextResponse.json(
-            { error: 'Failed to create room' },
+            { error: 'Failed to create room', message: errorMessage, stack: errorStack },
             { status: 500 }
         );
     }

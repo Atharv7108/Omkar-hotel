@@ -37,6 +37,7 @@ export default function OccupancyCalendar() {
     const [form, setForm] = useState({ roomId: '', start: '', end: '', reason: '' });
     const [submitting, setSubmitting] = useState(false);
     const [hoveredCell, setHoveredCell] = useState<{ roomId: string; date: string } | null>(null);
+    const [unblocking, setUnblocking] = useState<string | null>(null);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -61,10 +62,14 @@ export default function OccupancyCalendar() {
     const fetchData = async () => {
         setLoading(true);
         try {
+            // Calculate start and end of the current month for blocks query
+            const startOfMonth = new Date(year, month, 1).toISOString().split('T')[0];
+            const endOfMonth = new Date(year, month + 1, 0).toISOString().split('T')[0];
+            
             const [roomsRes, bookingsRes, blocksRes] = await Promise.all([
                 fetch('/api/admin/rooms'),
                 fetch(`/api/admin/bookings`),
-                fetch('/api/admin/room-blocks'),
+                fetch(`/api/admin/room-blocks?start=${startOfMonth}&end=${endOfMonth}`),
             ]);
 
             if (roomsRes.ok) {
@@ -233,6 +238,25 @@ export default function OccupancyCalendar() {
         }
     };
 
+    const unblockRoom = async (blockId: string) => {
+        if (!confirm('Are you sure you want to unblock this room?')) return;
+        setUnblocking(blockId);
+        try {
+            const res = await fetch(`/api/admin/room-blocks/${blockId}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to unblock');
+            }
+            await fetchData();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to unblock');
+        } finally {
+            setUnblocking(null);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -386,7 +410,17 @@ export default function OccupancyCalendar() {
                                                         {block && (
                                                             <div>
                                                                 <div className="font-medium">Blocked</div>
-                                                                <div className="text-slate-300 text-[10px]">{block.reason}</div>
+                                                                <div className="text-slate-300 text-[10px] mb-2">{block.reason}</div>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        unblockRoom(block.id);
+                                                                    }}
+                                                                    disabled={unblocking === block.id}
+                                                                    className="w-full px-2 py-1 text-[10px] font-medium bg-red-500 hover:bg-red-600 text-white rounded transition-colors disabled:opacity-50"
+                                                                >
+                                                                    {unblocking === block.id ? 'Unblocking...' : 'Unblock'}
+                                                                </button>
                                                             </div>
                                                         )}
                                                     </div>
@@ -468,6 +502,51 @@ export default function OccupancyCalendar() {
                     <div className="text-xs text-slate-500">Active Blocks</div>
                 </div>
             </div>
+
+            {/* Active Blocks List */}
+            {blocks.length > 0 && (
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                        <h4 className="text-sm font-semibold text-slate-700">Active Blocks</h4>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                        {blocks.map((block) => {
+                            const room = rooms.find(r => r.id === block.roomId);
+                            return (
+                                <div key={block.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-slate-800">
+                                                Room {room?.roomNumber || 'Unknown'}
+                                            </div>
+                                            <div className="text-xs text-slate-500">
+                                                {new Date(block.startDate).toLocaleDateString()} - {new Date(block.endDate).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        {block.reason && (
+                                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-lg">
+                                                {block.reason}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => unblockRoom(block.id)}
+                                        disabled={unblocking === block.id}
+                                        className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                                    >
+                                        {unblocking === block.id ? 'Removing...' : 'Unblock'}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

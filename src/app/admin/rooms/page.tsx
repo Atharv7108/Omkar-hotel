@@ -7,13 +7,15 @@ interface Room {
     id: string;
     roomNumber: string;
     type: string;
-    capacity: number;
+    baseOccupancy: number;
+    maxOccupancy: number;
+    extraGuestCharge: number | null;
     status: string;
     baseRate: number;
     amenities: string[];
     images: string[];
     description: string;
-    floor: number;
+    floor: number | null;
     size: number;
 }
 
@@ -263,8 +265,8 @@ export default function RoomsManagementPage() {
                         {/* Room Details */}
                         <div className="space-y-3 mb-4">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-500">Capacity</span>
-                                <span className="font-medium text-slate-700">{room.capacity} guests</span>
+                                <span className="text-slate-500">Occupancy</span>
+                                <span className="font-medium text-slate-700">{room.baseOccupancy}-{room.maxOccupancy} guests</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-500">Base Rate</span>
@@ -344,7 +346,9 @@ export default function RoomsManagementPage() {
                 initialData={selectedRoom ? {
                     roomNumber: selectedRoom.roomNumber,
                     type: selectedRoom.type as any,
-                    capacity: selectedRoom.capacity,
+                    baseOccupancy: selectedRoom.baseOccupancy || 2,
+                    maxOccupancy: selectedRoom.maxOccupancy || 3,
+                    extraGuestCharge: selectedRoom.extraGuestCharge || 0,
                     floor: selectedRoom.floor,
                     size: selectedRoom.size,
                     description: selectedRoom.description,

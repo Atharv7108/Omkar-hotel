@@ -66,12 +66,13 @@ function AddonsContent() {
 
     const [selectedAddons, setSelectedAddons] = useState<Record<string, number>>({});
 
-    // Get booking details from URL
+    // Get booking details from URL - support both roomId and roomType
     const roomId = searchParams.get('roomId');
+    const roomType = searchParams.get('roomType');
     const checkIn = searchParams.get('checkIn');
     const checkOut = searchParams.get('checkOut');
 
-    if (!roomId || !checkIn || !checkOut) {
+    if ((!roomId && !roomType) || !checkIn || !checkOut) {
         return (
             <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
                 <div className="text-center">
@@ -122,14 +123,16 @@ function AddonsContent() {
             .map(([id, quantity]) => `${id}:${quantity}`)
             .join(',');
 
+        const roomParam = roomId ? `roomId=${roomId}` : `roomType=${roomType}`;
         router.push(
-            `/book/guest-details?roomId=${roomId}&checkIn=${checkIn}&checkOut=${checkOut}&addons=${addonParams}`
+            `/book/guest-details?${roomParam}&checkIn=${checkIn}&checkOut=${checkOut}&addons=${addonParams}`
         );
     };
 
     const handleSkip = () => {
+        const roomParam = roomId ? `roomId=${roomId}` : `roomType=${roomType}`;
         router.push(
-            `/book/guest-details?roomId=${roomId}&checkIn=${checkIn}&checkOut=${checkOut}`
+            `/book/guest-details?${roomParam}&checkIn=${checkIn}&checkOut=${checkOut}`
         );
     };
 
