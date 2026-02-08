@@ -76,26 +76,19 @@ export default function AdminLayout({
 
             {/* Sidebar */}
             <aside className={`fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 z-50 transition-all duration-300 flex flex-col ${
-                sidebarCollapsed ? 'w-20' : 'w-64'
+                sidebarCollapsed ? 'w-20' : 'w-72'
             } ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
-                {/* Logo */}
+                {/* Branding */}
                 <div className="py-6 px-4 border-b border-white/10">
                     {!sidebarCollapsed && (
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-                                <span className="text-white font-bold text-base">O</span>
-                            </div>
-                            <div>
-                                <h1 className="text-white font-semibold text-sm">Omkar Hotel</h1>
-                                <p className="text-slate-400 text-[10px]">Admin Panel</p>
-                            </div>
+                        <div className="text-center w-full">
+                            <h1 className="text-[#C9A66B] font-serif text-xl tracking-wide leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>OMKAR</h1>
+                            <p className="text-[#C9A66B]/70 text-sm tracking-widest uppercase">HOTEL</p>
                         </div>
                     )}
                     {sidebarCollapsed && (
-                        <div className="w-full flex justify-center">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-                                <span className="text-white font-bold text-base">O</span>
-                            </div>
+                        <div className="text-center">
+                            <span className="text-[#C9A66B] font-serif text-xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>O</span>
                         </div>
                     )}
                 </div>
@@ -158,7 +151,7 @@ export default function AdminLayout({
             </aside>
 
             {/* Main Content */}
-            <main className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+            <main className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'}`}>
                 {/* Top Bar */}
                 <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30">
                     <div className="h-full px-4 lg:px-6 flex items-center justify-between">

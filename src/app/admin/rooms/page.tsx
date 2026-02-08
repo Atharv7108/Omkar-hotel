@@ -202,10 +202,7 @@ export default function RoomsManagementPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-semibold text-slate-800">Room Management</h1>
-                    <p className="text-slate-500 mt-1">Manage room status and availability</p>
-                </div>
+                <p className="text-slate-500">Manage room status and availability</p>
                 <button
                     onClick={() => {
                         setModalMode('create');
@@ -245,76 +242,80 @@ export default function RoomsManagementPage() {
                 </div>
             </div>
 
-            {/* Rooms Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredRooms.map((room) => (
-                    <div key={room.id} className="bg-white rounded-xl p-5 border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow">
-                        {/* Room Header */}
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-800">
-                                    Room {room.roomNumber}
-                                </h3>
-                                <p className="text-sm text-slate-500">{getRoomTypeLabel(room.type)}</p>
-                            </div>
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(room.status)}`}>
-                                {room.status}
-                            </span>
-                        </div>
-
-                        {/* Room Details */}
-                        <div className="space-y-3 mb-4">
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-500">Occupancy</span>
-                                <span className="font-medium text-slate-700">{room.baseOccupancy}-{room.maxOccupancy} guests</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-500">Base Rate</span>
-                                <span className="font-semibold text-slate-800">₹{room.baseRate.toLocaleString('en-IN')}/night</span>
-                            </div>
-                        </div>
-
-                        {/* Status Change Dropdown */}
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-                                Update Status
-                            </label>
-                            <select
-                                value={room.status}
-                                onChange={(e) => handleStatusChange(room.id, e.target.value)}
-                                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all bg-white"
-                            >
-                                <option value="AVAILABLE">Available</option>
-                                <option value="OCCUPIED">Occupied</option>
-                                <option value="CLEANING">Cleaning</option>
-                                <option value="MAINTENANCE">Maintenance</option>
-                                <option value="OUT_OF_ORDER">Out of Order</option>
-                            </select>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                            <button
-                                onClick={() => {
-                                    setModalMode('edit');
-                                    setSelectedRoom(room);
-                                    setModalOpen(true);
-                                }}
-                                className="flex-1 px-3 py-2 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors"
-                            >
-                                Edit Details
-                            </button>
-                            <button
-                                onClick={() => handleDeleteRoom(room.id, room.roomNumber)}
-                                className="px-3 py-2 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
-                            >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                ))}
+            {/* Rooms Table */}
+            <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Room</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Floor</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Occupancy</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Rate</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredRooms.map((room) => (
+                                <tr key={room.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-4">
+                                        <span className="font-semibold text-slate-800">Room {room.roomNumber}</span>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="text-slate-600">{getRoomTypeLabel(room.type)}</span>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="text-slate-600">{room.floor ? `Floor ${room.floor}` : '-'}</span>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="text-slate-600">{room.baseOccupancy}-{room.maxOccupancy} guests</span>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className="font-semibold text-slate-800">₹{room.baseRate.toLocaleString('en-IN')}</span>
+                                        <span className="text-slate-400 text-sm">/night</span>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <select
+                                            value={room.status}
+                                            onChange={(e) => handleStatusChange(room.id, e.target.value)}
+                                            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-teal-100 transition-all ${getStatusColor(room.status)}`}
+                                        >
+                                            <option value="AVAILABLE">Available</option>
+                                            <option value="OCCUPIED">Occupied</option>
+                                            <option value="CLEANING">Cleaning</option>
+                                            <option value="MAINTENANCE">Maintenance</option>
+                                            <option value="OUT_OF_ORDER">Out of Order</option>
+                                        </select>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setModalMode('edit');
+                                                    setSelectedRoom(room);
+                                                    setModalOpen(true);
+                                                }}
+                                                className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteRoom(room.id, room.roomNumber)}
+                                                className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {filteredRooms.length === 0 && (

@@ -106,10 +106,7 @@ export default function GuestsManagementPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-semibold text-slate-800">Guest Management</h1>
-                    <p className="text-slate-500 mt-1">View and manage guest information</p>
-                </div>
+                <p className="text-slate-500">View and manage guest information</p>
             </div>
 
             {error && (

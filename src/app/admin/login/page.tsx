@@ -34,10 +34,14 @@ export default function AdminLoginPage() {
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-display font-bold text-white mb-2">
-                        Omkar Hotel
+                    <div className="flex justify-center mb-4">
+                        <img src="/logo.png" alt="Omkar Hotel Logo" className="w-20 h-20 object-contain" />
+                    </div>
+                    <h1 className="text-4xl font-serif text-[#C9A66B] tracking-[0.15em] mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                        OMKAR
                     </h1>
-                    <p className="text-white/80">Admin Dashboard</p>
+                    <p className="text-[#C9A66B]/70 text-sm tracking-[0.3em] uppercase">HOTEL</p>
+                    <p className="text-white/80 mt-3">Admin Dashboard</p>
                 </div>
 
                 {/* Login Card */}

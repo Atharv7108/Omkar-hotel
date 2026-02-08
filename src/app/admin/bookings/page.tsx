@@ -140,10 +140,7 @@ export default function BookingsManagementPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-semibold text-slate-800">Booking Management</h1>
-                    <p className="text-slate-500 mt-1">View and manage all bookings</p>
-                </div>
+                <p className="text-slate-500">View and manage all bookings</p>
                 <button 
                     className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-sm"
                     onClick={() => setNewModalOpen(true)}

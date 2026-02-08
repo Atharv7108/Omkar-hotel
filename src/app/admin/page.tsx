@@ -187,11 +187,10 @@ export default function AdminDashboard() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
+            {/* Date Info */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-slate-800">Dashboard</h1>
-                    <p className="text-slate-500 mt-1">
+                    <p className="text-slate-500">
                         {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                 </div>
