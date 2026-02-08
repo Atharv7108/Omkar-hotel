@@ -159,9 +159,7 @@ export default function AdminDashboard() {
     };
 
     const formatCurrency = (amount: number) => {
-        if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
-        if (amount >= 1000) return `₹${(amount / 1000).toFixed(0)}K`;
-        return `₹${amount}`;
+        return `₹${amount.toLocaleString('en-IN')}`;
     };
 
     const getChangeIndicator = (change: number) => {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DateRangePicker } from '@/components/DateRangePicker';
 
-type RoomOption = { id: string; label: string; baseRate: number };
+type RoomOption = { id: string; label: string; baseRate: number; roomNumber: string; type: string };
 
 interface NewBookingModalProps {
   open: boolean;
@@ -16,13 +16,13 @@ export default function NewBookingModal({ open, onClose, onCreated }: NewBooking
   const [checkOut, setCheckOut] = useState<Date | null>(null);
   const [availableRooms, setAvailableRooms] = useState<RoomOption[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
+  const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
   const [form, setForm] = useState({
     fullName: '',
     email: '',
     phone: '',
     idProofType: 'AADHAAR',
     idProofNumber: '',
-    roomId: '',
     numberOfGuests: 2,
     paymentMethod: 'CASH',
     paidAmount: 0,
@@ -37,9 +37,10 @@ export default function NewBookingModal({ open, onClose, onCreated }: NewBooking
       setCheckIn(null);
       setCheckOut(null);
       setAvailableRooms([]);
+      setSelectedRoomIds([]);
       setForm({
         fullName: '', email: '', phone: '', idProofType: 'AADHAAR', idProofNumber: '',
-        roomId: '', numberOfGuests: 2, paymentMethod: 'CASH', paidAmount: 0, specialRequests: ''
+        numberOfGuests: 2, paymentMethod: 'CASH', paidAmount: 0, specialRequests: ''
       });
       setError(null);
     }
@@ -59,14 +60,19 @@ export default function NewBookingModal({ open, onClose, onCreated }: NewBooking
           throw new Error(j.error || 'Failed to fetch available rooms');
         }
         const j = await res.json();
-        const opts = (j.data || []).map((r: any) => ({ id: r.id, label: `Room ${r.roomNumber} • ${r.type}`, baseRate: r.baseRate }));
+        const opts = (j.data || []).map((r: any) => ({ 
+          id: r.id, 
+          label: `Room ${r.roomNumber} • ${r.type}`, 
+          baseRate: r.baseRate,
+          roomNumber: r.roomNumber,
+          type: r.type
+        }));
         setAvailableRooms(opts);
-        // auto-select first room
-        setForm((f) => ({ ...f, roomId: opts[0]?.id ?? '' }));
+        setSelectedRoomIds([]);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to fetch available rooms');
         setAvailableRooms([]);
-        setForm((f) => ({ ...f, roomId: '' }));
+        setSelectedRoomIds([]);
       } finally {
         setRoomsLoading(false);
       }
@@ -76,41 +82,131 @@ export default function NewBookingModal({ open, onClose, onCreated }: NewBooking
 
   const nights = useMemo(() => (checkIn && checkOut ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000*60*60*24)) : 0), [checkIn, checkOut]);
 
+  const toggleRoom = (roomId: string) => {
+    setSelectedRoomIds(prev => 
+      prev.includes(roomId) 
+        ? prev.filter(id => id !== roomId)
+        : [...prev, roomId]
+    );
+  };
+
+  const selectAllRooms = () => {
+    if (selectedRoomIds.length === availableRooms.length) {
+      setSelectedRoomIds([]);
+    } else {
+      setSelectedRoomIds(availableRooms.map(r => r.id));
+    }
+  };
+
+  const selectedRoomsTotal = useMemo(() => {
+    return selectedRoomIds.reduce((sum, id) => {
+      const room = availableRooms.find(r => r.id === id);
+      return sum + (room?.baseRate || 0) * nights;
+    }, 0);
+  }, [selectedRoomIds, availableRooms, nights]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkIn || !checkOut) { setError('Please select check-in and check-out'); return; }
-    if (!form.roomId) { setError('Please select a room'); return; }
+    if (selectedRoomIds.length === 0) { setError('Please select at least one room'); return; }
     if (!form.fullName || !form.email || !form.phone || !form.idProofNumber) { setError('Please complete guest details'); return; }
     setSubmitting(true);
     setError(null);
+    
     try {
-      const payload = {
-        guestInfo: {
-          fullName: form.fullName.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim(),
-          idProofType: form.idProofType.trim(),
-          idProofNumber: form.idProofNumber.trim(),
-        },
-        roomId: form.roomId,
-        checkIn: checkIn.toISOString().slice(0,10),
-        checkOut: checkOut.toISOString().slice(0,10),
-        numberOfGuests: Number(form.numberOfGuests),
-        specialRequests: form.specialRequests || undefined,
-        addons: [],
-        paymentMethod: form.paymentMethod as 'CASH' | 'CARD' | 'UPI' | 'ONLINE',
-        paidAmount: Number(form.paidAmount) || 0,
-      };
+      const results = [];
+      const errors = [];
+      let guestId: string | null = null;
+      
+      // Create a booking for each selected room
+      for (let i = 0; i < selectedRoomIds.length; i++) {
+        const roomId = selectedRoomIds[i];
+        const isFirstBooking = i === 0;
+        
+        const payload: any = {
+          roomId,
+          checkIn: checkIn.toISOString().slice(0,10),
+          checkOut: checkOut.toISOString().slice(0,10),
+          numberOfGuests: Number(form.numberOfGuests),
+          specialRequests: form.specialRequests || undefined,
+          addons: [],
+          paymentMethod: form.paymentMethod as 'CASH' | 'CARD' | 'UPI' | 'ONLINE',
+          paidAmount: isFirstBooking ? Number(form.paidAmount) || 0 : 0,
+        };
 
-      const res = await fetch('/api/admin/bookings', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || 'Failed to create booking');
+        // First booking creates the guest, subsequent bookings use the guestId
+        if (isFirstBooking || !guestId) {
+          payload.guestInfo = {
+            fullName: form.fullName.trim(),
+            email: form.email.trim(),
+            phone: form.phone.trim(),
+            idProofType: form.idProofType.trim(),
+            idProofNumber: form.idProofNumber.trim(),
+          };
+        } else {
+          payload.guestId = guestId;
+        }
+
+        console.log(`Sending payload for room ${i + 1}:`, JSON.stringify(payload, null, 2));
+
+        try {
+          const res = await fetch('/api/admin/bookings', {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload)
+          });
+          
+          console.log(`Response for room ${i + 1}: status=${res.status}`);
+          
+          if (!res.ok) {
+            const text = await res.text();
+            console.error(`Response text for room ${i + 1}:`, text);
+            let j: any = {};
+            try {
+              j = JSON.parse(text);
+            } catch {
+              j = { error: text || `HTTP ${res.status}` };
+            }
+            const room = availableRooms.find(r => r.id === roomId);
+            // Show detailed validation errors
+            let errorMsg = j.error || `HTTP ${res.status}`;
+            if (j.details) {
+              if (Array.isArray(j.details)) {
+                errorMsg = j.details.map((d: any) => `${d.path?.join('.')}: ${d.message}`).join(', ');
+              } else {
+                errorMsg = `${j.error}: ${j.details}`;
+              }
+            }
+            errors.push(`Room ${room?.roomNumber}: ${errorMsg}`);
+            console.error('Booking error for room', room?.roomNumber, j);
+          } else {
+            const j = await res.json();
+            console.log('Booking created:', j);
+            results.push(j.booking);
+            // Store the guestId from first successful booking to reuse
+            if (!guestId && j.booking?.guest?.id) {
+              guestId = j.booking.guest.id;
+              console.log('Captured guestId:', guestId);
+            }
+          }
+        } catch (err) {
+          const room = availableRooms.find(r => r.id === roomId);
+          errors.push(`Room ${room?.roomNumber}: Network error`);
+        }
       }
+      
+      if (errors.length > 0 && results.length === 0) {
+        throw new Error(errors.join('; '));
+      }
+      
+      if (errors.length > 0) {
+        setError(`Created ${results.length} booking(s). Errors: ${errors.join('; ')}`);
+      }
+      
       onCreated();
-      onClose();
+      if (errors.length === 0) {
+        onClose();
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create booking');
     } finally {
@@ -143,23 +239,86 @@ export default function NewBookingModal({ open, onClose, onCreated }: NewBooking
             />
           </div>
 
-          {/* Room */}
+          {/* Room Selection */}
           <div>
-            <label className="block text-sm font-semibold text-neutral-700 mb-2">Room</label>
-            <select
-              value={form.roomId}
-              onChange={(e) => setForm({ ...form, roomId: e.target.value })}
-              className="input-field"
-              disabled={!checkIn || !checkOut || roomsLoading}
-              required
-            >
-              <option value="">{roomsLoading ? 'Loading rooms…' : 'Select room'}</option>
-              {availableRooms.map(r => (
-                <option key={r.id} value={r.id}>{r.label}</option>
-              ))}
-            </select>
-            {nights > 0 && form.roomId && (
-              <p className="text-xs text-neutral-600 mt-1">{nights} night(s)</p>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-neutral-700">
+                Select Rooms {selectedRoomIds.length > 0 && <span className="text-amber-600">({selectedRoomIds.length} selected)</span>}
+              </label>
+              {availableRooms.length > 0 && (
+                <button 
+                  type="button"
+                  onClick={selectAllRooms}
+                  className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+                >
+                  {selectedRoomIds.length === availableRooms.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+            </div>
+            
+            {roomsLoading ? (
+              <div className="flex items-center justify-center py-8 bg-neutral-50 rounded-lg border border-neutral-200">
+                <div className="animate-spin h-5 w-5 border-2 border-amber-600 border-t-transparent rounded-full mr-2"></div>
+                <span className="text-neutral-600 text-sm">Loading available rooms...</span>
+              </div>
+            ) : !checkIn || !checkOut ? (
+              <div className="py-8 text-center bg-neutral-50 rounded-lg border border-neutral-200">
+                <span className="text-neutral-500 text-sm">Select check-in and check-out dates first</span>
+              </div>
+            ) : availableRooms.length === 0 ? (
+              <div className="py-8 text-center bg-red-50 rounded-lg border border-red-200">
+                <span className="text-red-600 text-sm">No rooms available for selected dates</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
+                {availableRooms.map(room => {
+                  const isSelected = selectedRoomIds.includes(room.id);
+                  return (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() => toggleRoom(room.id)}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        isSelected 
+                          ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' 
+                          : 'border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className={`font-semibold text-sm ${isSelected ? 'text-amber-700' : 'text-neutral-800'}`}>
+                            Room {room.roomNumber}
+                          </div>
+                          <div className="text-xs text-neutral-500">{room.type}</div>
+                          <div className="text-xs font-medium text-neutral-600 mt-1">₹{room.baseRate.toLocaleString()}/night</div>
+                        </div>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center ${
+                          isSelected ? 'bg-amber-500' : 'border-2 border-neutral-300'
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            
+            {nights > 0 && selectedRoomIds.length > 0 && (
+              <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-neutral-600">
+                    {selectedRoomIds.length} room(s) × {nights} night(s)
+                  </span>
+                  <span className="font-semibold text-amber-700">
+                    ₹{selectedRoomsTotal.toLocaleString()} (before tax)
+                  </span>
+                </div>
+              </div>
             )}
           </div>
 

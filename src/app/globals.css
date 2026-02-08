@@ -1,4 +1,10 @@
 /* Omkar Hotel - Premium Design System */
+/* Color Theme: Earthy Luxury Palette */
+/* #3E362E - Dark Charcoal Brown */
+/* #865D36 - Warm Bronze */
+/* #93785B - Tan/Taupe */
+/* #AC8968 - Light Camel */
+/* #A69080 - Stone Gray */
 
 /* Google Fonts Import - Must be at the top */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -7,26 +13,45 @@
 
 /* Custom Design Tokens */
 @theme {
-  /* Premium Color Palette for Omkar Hotel - Improved Contrast */
-  --color-brand-primary: oklch(45% 0.15 200);
-  /* Vibrant Teal */
-  --color-brand-secondary: oklch(60% 0.18 30);
-  /* Warm Coral/Orange */
-  --color-brand-accent: oklch(55% 0.20 140);
-  /* Fresh Green */
+  /* Premium Color Palette for Omkar Hotel - Earthy Luxury */
+  --color-brand-primary: #865D36;
+  /* Warm Bronze */
+  --color-brand-secondary: #3E362E;
+  /* Dark Charcoal */
+  --color-brand-accent: #AC8968;
+  /* Light Camel Accent */
 
-  /* Neutral Colors - Better Contrast */
+  /* Custom Hotel Colors */
+  --color-hotel-dark: #3E362E;
+  --color-hotel-bronze: #865D36;
+  --color-hotel-taupe: #93785B;
+  --color-hotel-camel: #AC8968;
+  --color-hotel-stone: #A69080;
+  
+  /* Earthy Brown Variations */
+  --color-earth-50: #f7f5f3;
+  --color-earth-100: #ebe7e3;
+  --color-earth-200: #d4cdc5;
+  --color-earth-300: #A69080;
+  --color-earth-400: #93785B;
+  --color-earth-500: #865D36;
+  --color-earth-600: #6b4a2b;
+  --color-earth-700: #503820;
+  --color-earth-800: #3E362E;
+  --color-earth-900: #2a2521;
+
+  /* Neutral Colors - Gray Scale for Premium Look */
   --color-neutral-50: oklch(98% 0 0);
-  --color-neutral-100: oklch(95% 0 0);
-  --color-neutral-200: oklch(88% 0 0);
-  --color-neutral-300: oklch(78% 0 0);
-  --color-neutral-400: oklch(60% 0 0);
-  --color-neutral-500: oklch(50% 0 0);
-  --color-neutral-600: oklch(40% 0 0);
-  --color-neutral-700: oklch(30% 0 0);
-  --color-neutral-800: oklch(22% 0 0);
-  --color-neutral-900: oklch(15% 0 0);
-  --color-neutral-950: oklch(10% 0 0);
+  --color-neutral-100: oklch(95% 0.005 60);
+  --color-neutral-200: oklch(90% 0.005 60);
+  --color-neutral-300: oklch(80% 0.005 60);
+  --color-neutral-400: oklch(65% 0.005 60);
+  --color-neutral-500: oklch(50% 0.005 60);
+  --color-neutral-600: oklch(40% 0.005 60);
+  --color-neutral-700: oklch(28% 0.005 60);
+  --color-neutral-800: oklch(18% 0.005 60);
+  --color-neutral-900: oklch(12% 0.005 60);
+  --color-neutral-950: oklch(8% 0.005 60);
 
   /* Semantic Colors */
   --color-success: oklch(60% 0.18 145);

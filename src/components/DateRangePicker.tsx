@@ -71,12 +71,12 @@ export function DateRangePicker({ onChange, minNights = 1, maxGuests = 10 }: Dat
         : 0;
 
     return (
-        <div className="bg-white rounded-2xl p-6">
+        <div className="bg-[#3E362E] rounded-2xl p-6 border border-[#93785B]/30">
             <div className="grid md:grid-cols-4 gap-6">
                 {/* Check-in Date */}
                 <div>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-neutral-700 mb-3">
-                        <svg className="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-[#A69080] mb-3">
+                        <svg className="w-4 h-4 text-[#C9A66B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         Check-in
@@ -86,14 +86,14 @@ export function DateRangePicker({ onChange, minNights = 1, maxGuests = 10 }: Dat
                         value={checkIn}
                         min={today}
                         onChange={(e) => handleCheckInChange(e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-neutral-200 rounded-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all text-neutral-800 font-medium"
+                        className="w-full px-4 py-3 border-2 border-[#93785B]/40 bg-[#3E362E] rounded-xl focus:border-[#C9A66B] focus:ring-4 focus:ring-[#C9A66B]/10 transition-all text-white font-medium"
                     />
                 </div>
 
                 {/* Check-out Date */}
                 <div>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-neutral-700 mb-3">
-                        <svg className="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-[#A69080] mb-3">
+                        <svg className="w-4 h-4 text-[#C9A66B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         Check-out
@@ -103,34 +103,34 @@ export function DateRangePicker({ onChange, minNights = 1, maxGuests = 10 }: Dat
                         value={checkOut}
                         min={checkIn || today}
                         onChange={(e) => handleCheckOutChange(e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-neutral-200 rounded-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all text-neutral-800 font-medium"
+                        className="w-full px-4 py-3 border-2 border-[#93785B]/40 bg-[#3E362E] rounded-xl focus:border-[#C9A66B] focus:ring-4 focus:ring-[#C9A66B]/10 transition-all text-white font-medium"
                     />
                 </div>
 
                 {/* Guests Selector */}
                 <div>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-neutral-700 mb-3">
-                        <svg className="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-[#A69080] mb-3">
+                        <svg className="w-4 h-4 text-[#C9A66B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         Guests
                     </label>
-                    <div className="flex items-center justify-between px-4 py-3 border-2 border-neutral-200 rounded-xl bg-white">
+                    <div className="flex items-center justify-between px-4 py-3 border-2 border-[#93785B]/40 rounded-xl bg-[#3E362E]">
                         <button
                             type="button"
                             onClick={() => handleGuestsChange(Math.max(1, guests - 1))}
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 hover:from-teal-100 hover:to-teal-200 flex items-center justify-center text-neutral-700 font-bold transition-all text-lg disabled:opacity-40"
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#93785B]/50 to-[#93785B]/30 hover:from-[#865D36] hover:to-[#AC8968] flex items-center justify-center text-white font-bold transition-all text-lg disabled:opacity-40"
                             disabled={guests <= 1}
                         >
                             −
                         </button>
-                        <span className="font-bold text-lg text-neutral-900">
-                            {guests} <span className="font-normal text-neutral-500">Guest{guests > 1 ? 's' : ''}</span>
+                        <span className="font-bold text-lg text-white">
+                            {guests} <span className="font-normal text-[#A69080]">Guest{guests > 1 ? 's' : ''}</span>
                         </span>
                         <button
                             type="button"
                             onClick={() => handleGuestsChange(Math.min(maxGuests, guests + 1))}
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 hover:from-teal-100 hover:to-teal-200 flex items-center justify-center text-neutral-700 font-bold transition-all text-lg disabled:opacity-40"
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#93785B]/50 to-[#93785B]/30 hover:from-[#865D36] hover:to-[#AC8968] flex items-center justify-center text-white font-bold transition-all text-lg disabled:opacity-40"
                             disabled={guests >= maxGuests}
                         >
                             +
@@ -141,16 +141,16 @@ export function DateRangePicker({ onChange, minNights = 1, maxGuests = 10 }: Dat
                 {/* Nights Display / Search Button */}
                 <div className="flex items-end">
                     <div className="w-full">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-neutral-700 mb-3">
-                            <svg className="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-[#A69080] mb-3">
+                            <svg className="w-4 h-4 text-[#C9A66B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                             </svg>
                             Duration
                         </label>
                         <div className={`px-4 py-3 rounded-xl flex items-center justify-center font-bold text-lg ${
                             nights > 0 
-                                ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/30' 
-                                : 'bg-neutral-100 text-neutral-400'
+                                ? 'bg-gradient-to-r from-[#865D36] to-[#AC8968] text-white shadow-lg shadow-[#865D36]/30' 
+                                : 'bg-[#3E362E] text-[#A69080]'
                         }`}>
                             {nights > 0 ? (
                                 <span className="flex items-center gap-2">
@@ -168,40 +168,40 @@ export function DateRangePicker({ onChange, minNights = 1, maxGuests = 10 }: Dat
             </div>
 
             {nights > 0 && (
-                <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-center gap-6 text-sm">
-                    <div className="flex items-center gap-2 text-neutral-600">
-                        <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                            <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="mt-6 pt-4 border-t border-[#93785B]/30 flex items-center justify-center gap-6 text-sm">
+                    <div className="flex items-center gap-2 text-[#A69080]">
+                        <div className="w-8 h-8 bg-[#C9A66B]/20 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-[#C9A66B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                             </svg>
                         </div>
                         <div>
-                            <p className="font-semibold text-neutral-800">{new Date(checkIn).toLocaleDateString('en-IN', {
+                            <p className="font-semibold text-white">{new Date(checkIn).toLocaleDateString('en-IN', {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric'
                             })}</p>
-                            <p className="text-xs text-neutral-500">Check-in</p>
+                            <p className="text-xs text-[#93785B]">Check-in</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1 text-neutral-400">
+                    <div className="flex items-center gap-1 text-[#93785B]">
                         <span>→</span>
                         <span className="text-xs">{nights} night{nights > 1 ? 's' : ''}</span>
                         <span>→</span>
                     </div>
-                    <div className="flex items-center gap-2 text-neutral-600">
-                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                            <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-center gap-2 text-[#A69080]">
+                        <div className="w-8 h-8 bg-[#865D36]/20 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-[#865D36]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </div>
                         <div>
-                            <p className="font-semibold text-neutral-800">{new Date(checkOut).toLocaleDateString('en-IN', {
+                            <p className="font-semibold text-white">{new Date(checkOut).toLocaleDateString('en-IN', {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric'
                             })}</p>
-                            <p className="text-xs text-neutral-500">Check-out</p>
+                            <p className="text-xs text-[#93785B]">Check-out</p>
                         </div>
                     </div>
                 </div>

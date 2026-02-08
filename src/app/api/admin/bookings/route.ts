@@ -118,8 +118,13 @@ export async function POST(request: NextRequest) {
         // Get or create guest
         let guestId = validatedData.guestId;
         if (!guestId && validatedData.guestInfo) {
+            const { idProofType, idProofNumber, address, ...guestData } = validatedData.guestInfo;
             const guest = await prisma.guest.create({
-                data: validatedData.guestInfo,
+                data: {
+                    ...guestData,
+                    idProof: { type: idProofType, number: idProofNumber },
+                    address: address ? { street: address } : undefined,
+                },
             });
             guestId = guest.id;
         }
@@ -206,8 +211,9 @@ export async function POST(request: NextRequest) {
         }
 
         console.error('Error creating booking:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json(
-            { error: 'Failed to create booking' },
+            { error: 'Failed to create booking', details: errorMessage },
             { status: 500 }
         );
     }

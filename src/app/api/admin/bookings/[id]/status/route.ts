@@ -46,7 +46,6 @@ export async function PATCH(
             case 'CANCELLED':
                 // Add cancellation reason and free up room
                 if (validatedData.cancellationReason) {
-                    updates.canceledAt = new Date();
                     updates.specialRequests = `${booking.specialRequests || ''}\n\nCancellation Reason: ${validatedData.cancellationReason}`.trim();
                 }
                 // Set room back to available if it was held

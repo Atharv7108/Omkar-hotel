@@ -10,6 +10,7 @@ export const createBookingSchema = z.object({
         phone: z.string().min(10, 'Valid phone number is required'),
         idProofType: z.string().min(1, 'ID proof type is required'),
         idProofNumber: z.string().min(5, 'ID proof number is required'),
+        address: z.string().optional(),
     }).optional(),
     roomId: z.string().min(1, 'Room is required'),
     checkIn: z.string().min(1, 'Check-in date is required'),

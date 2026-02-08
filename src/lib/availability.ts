@@ -151,7 +151,7 @@ export async function getAvailableRooms(checkIn: Date, checkOut: Date) {
             id: room.id,
             roomNumber: room.roomNumber,
             type: room.type,
-            capacity: room.capacity,
+            maxOccupancy: room.maxOccupancy,
             description: room.description,
             amenities: typeof (room.amenities as any) === 'string'
                 ? (JSON.parse(room.amenities as unknown as string) as string[])

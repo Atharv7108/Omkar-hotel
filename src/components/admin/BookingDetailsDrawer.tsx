@@ -70,7 +70,7 @@ export function BookingDetailsDrawer({ open, booking, onClose, onChangeStatus }:
           </section>
 
           {/* Stay */}
-          <section className="grid grid-cols-3 gap-4">
+          <section className="grid grid-cols-4 gap-4">
             <div>
               <div className="text-xs text-neutral-500 mb-1">Check-in</div>
               <div className="text-sm font-medium text-neutral-900">{booking.checkIn}</div>
@@ -82,6 +82,10 @@ export function BookingDetailsDrawer({ open, booking, onClose, onChangeStatus }:
             <div>
               <div className="text-xs text-neutral-500 mb-1">Nights</div>
               <div className="text-sm font-medium text-neutral-900">{nights}</div>
+            </div>
+            <div>
+              <div className="text-xs text-neutral-500 mb-1">Guests</div>
+              <div className="text-sm font-medium text-neutral-900">{booking.guests}</div>
             </div>
           </section>
 
