@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+
+// Session timeout in milliseconds (30 minutes of inactivity)
+const SESSION_TIMEOUT = 60 * 60 * 1000;
+// Check interval (every 1 minute)
+const CHECK_INTERVAL = 60 * 1000;
 
 export default function AdminLayout({
     children,
@@ -13,16 +18,119 @@ export default function AdminLayout({
     const pathname = usePathname();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [sessionWarning, setSessionWarning] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState(0);
 
-    useEffect(() => {
-        // Check authentication (skip for login page)
-        if (pathname !== '/admin/login') {
-            const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
-            if (!isAuthenticated) {
-                router.push('/admin/login');
+    // Check if session is valid
+    const checkSession = useCallback(() => {
+        if (pathname === '/admin/login') return true;
+        
+        try {
+            const sessionStr = localStorage.getItem('adminSession');
+            if (!sessionStr) return false;
+            
+            const session = JSON.parse(sessionStr);
+            if (!session.authenticated) return false;
+            
+            const timeSinceActivity = Date.now() - session.lastActivity;
+            
+            // Session expired
+            if (timeSinceActivity > SESSION_TIMEOUT) {
+                return false;
             }
+            
+            // Show warning when 5 minutes remaining
+            const remaining = SESSION_TIMEOUT - timeSinceActivity;
+            if (remaining < 5 * 60 * 1000 && remaining > 0) {
+                setSessionWarning(true);
+                setTimeRemaining(Math.ceil(remaining / 1000));
+            } else {
+                setSessionWarning(false);
+            }
+            
+            return true;
+        } catch {
+            return false;
         }
-    }, [pathname, router]);
+    }, [pathname]);
+
+    // Update last activity timestamp
+    const updateActivity = useCallback(() => {
+        try {
+            const sessionStr = localStorage.getItem('adminSession');
+            if (sessionStr) {
+                const session = JSON.parse(sessionStr);
+                session.lastActivity = Date.now();
+                localStorage.setItem('adminSession', JSON.stringify(session));
+                setSessionWarning(false);
+            }
+        } catch {
+            // Ignore errors
+        }
+    }, []);
+
+    // Logout function
+    const handleSessionExpiry = useCallback(() => {
+        localStorage.removeItem('adminSession');
+        router.push('/admin/login?expired=true');
+    }, [router]);
+
+    // Check authentication and set up activity tracking
+    useEffect(() => {
+        if (pathname === '/admin/login') return;
+
+        // Initial check
+        if (!checkSession()) {
+            handleSessionExpiry();
+            return;
+        }
+
+        // Set up periodic session check
+        const intervalId = setInterval(() => {
+            if (!checkSession()) {
+                handleSessionExpiry();
+            }
+        }, CHECK_INTERVAL);
+
+        // Activity event listeners
+        const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+        
+        const handleActivity = () => {
+            updateActivity();
+        };
+
+        // Throttle activity updates (max once per 30 seconds)
+        let lastUpdate = 0;
+        const throttledActivity = () => {
+            const now = Date.now();
+            if (now - lastUpdate > 30000) {
+                lastUpdate = now;
+                handleActivity();
+            }
+        };
+
+        activityEvents.forEach(event => {
+            window.addEventListener(event, throttledActivity);
+        });
+
+        // Update activity on page visibility change
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                if (!checkSession()) {
+                    handleSessionExpiry();
+                }
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(intervalId);
+            activityEvents.forEach(event => {
+                window.removeEventListener(event, throttledActivity);
+            });
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [pathname, checkSession, updateActivity, handleSessionExpiry]);
 
     // Don't show layout on login page
     if (pathname === '/admin/login') {
@@ -58,8 +166,14 @@ export default function AdminLayout({
     ];
 
     const handleLogout = () => {
-        localStorage.removeItem('adminAuth');
+        localStorage.removeItem('adminSession');
         router.push('/admin/login');
+    };
+
+    // Extend session (called from warning modal)
+    const extendSession = () => {
+        updateActivity();
+        setSessionWarning(false);
     };
 
     const currentPage = navigation.find((item) => item.href === pathname)?.name || 'Dashboard';
@@ -208,6 +322,45 @@ export default function AdminLayout({
                 {/* Page Content */}
                 <div className="p-4 lg:p-6">{children}</div>
             </main>
+
+            {/* Session Expiry Warning Modal */}
+            {sessionWarning && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-slate-900">Session Expiring Soon</h3>
+                                <p className="text-sm text-slate-500">Due to inactivity</p>
+                            </div>
+                        </div>
+                        <p className="text-slate-600 mb-4">
+                            Your session will expire in <span className="font-bold text-amber-600">{Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}</span> due to inactivity.
+                        </p>
+                        <p className="text-sm text-slate-500 mb-6">
+                            Click "Stay Logged In" to continue working, or you'll be automatically logged out.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleLogout}
+                                className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                                Log Out Now
+                            </button>
+                            <button
+                                onClick={extendSession}
+                                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all"
+                            >
+                                Stay Logged In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

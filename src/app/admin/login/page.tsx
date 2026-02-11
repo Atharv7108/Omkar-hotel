@@ -1,27 +1,42 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function AdminLoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [sessionExpired, setSessionExpired] = useState(false);
+
+    // Check if redirected due to session expiry
+    useEffect(() => {
+        if (searchParams.get('expired') === 'true') {
+            setSessionExpired(true);
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSessionExpired(false);
         setIsLoading(true);
 
         // Mock authentication - in production, this would call an API
         // Default credentials: admin@omkarhotel.com / admin123
         if (formData.email === 'admin@omkarhotel.com' && formData.password === 'admin123') {
-            // Store auth token in localStorage (in production, use httpOnly cookies)
-            localStorage.setItem('adminAuth', 'true');
+            // Store auth session with timestamp for expiry tracking
+            const session = {
+                authenticated: true,
+                loginTime: Date.now(),
+                lastActivity: Date.now(),
+            };
+            localStorage.setItem('adminSession', JSON.stringify(session));
             router.push('/admin');
         } else {
             setError('Invalid email or password');
@@ -32,6 +47,21 @@ export default function AdminLoginPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center p-4">
             <div className="w-full max-w-md">
+                {/* Session Expired Alert */}
+                {sessionExpired && (
+                    <div className="mb-6 bg-amber-500/20 border border-amber-500/50 rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-amber-300 font-medium">Session Expired</p>
+                            <p className="text-amber-300/70 text-sm">Your session expired due to inactivity. Please log in again.</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">
